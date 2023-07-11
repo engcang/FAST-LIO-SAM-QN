@@ -1,0 +1,9 @@
+[submodule "third_party/FAST_LIO"]
+	path = third_party/FAST_LIO
+	url = https://github.com/hku-mars/FAST_LIO
+[submodule "third_party/livox_ros_driver"]
+	path = third_party/livox_ros_driver
+	url = https://github.com/Livox-SDK/livox_ros_driver
+[submodule "third_party/tbb-aarch64"]
+	path = third_party/tbb-aarch64
+	url = https://github.com/syoyo/tbb-aarch64
