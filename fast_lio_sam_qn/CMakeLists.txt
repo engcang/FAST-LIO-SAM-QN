@@ -39,7 +39,7 @@ catkin_package() #this automatically adds/installs the results of build
 ### get packages' headers
 include_directories(
   include
-	${catkin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
   ${GTSAM_INCLUDE_DIR}
@@ -54,12 +54,13 @@ link_directories(${TBB2020_LIBRARY_DIR})
 ## Build ##
 ###########
 ### main
+set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} gtsam tbb)
 add_library(${PROJECT_NAME}_constructor src/constructor.cpp)
-target_link_libraries(${PROJECT_NAME}_constructor ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} gtsam tbb)
+target_link_libraries(${PROJECT_NAME}_constructor ${COMMON_LIBS})
 add_library(${PROJECT_NAME}_methods src/methods.cpp)
-target_link_libraries(${PROJECT_NAME}_methods ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} gtsam tbb)
+target_link_libraries(${PROJECT_NAME}_methods ${COMMON_LIBS})
 add_library(${PROJECT_NAME}_callbacks src/callbacks.cpp)
-target_link_libraries(${PROJECT_NAME}_callbacks ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} gtsam tbb)
+target_link_libraries(${PROJECT_NAME}_callbacks ${COMMON_LIBS})
 
 add_executable(${PROJECT_NAME}_node src/main.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} gtsam tbb ${PROJECT_NAME}_constructor ${PROJECT_NAME}_callbacks ${PROJECT_NAME}_methods)
+target_link_libraries(${PROJECT_NAME}_node ${COMMON_LIBS} ${PROJECT_NAME}_constructor ${PROJECT_NAME}_callbacks ${PROJECT_NAME}_methods)

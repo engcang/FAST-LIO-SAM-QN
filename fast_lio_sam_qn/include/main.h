@@ -70,6 +70,8 @@ struct pose_pcd
 class FAST_LIO_SAM_QN_CLASS
 {
   private:
+    int m_temp_counter = 0;
+    double m_temp_time_counter = 0.0;
     ///// basic params
     string m_map_frame;
     ///// shared data - odom and pcd
@@ -117,6 +119,7 @@ class FAST_LIO_SAM_QN_CLASS
     ///// functions
   public:
     FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private);
+    ~FAST_LIO_SAM_QN_CLASS(){cout<< endl << endl << endl << "asjdfsdf0sad9fs90df80f98sa90f80s9f8d09fs8ad90f8sd90f8s09sda8f09sd8f09sf8sd90f8sa09fs8f0saf8s09df890,,, "<< m_temp_counter << ", " << m_temp_time_counter << endl<< endl << endl;}
   private:
     //methods
     void update_vis_vars(const pose_pcd &pose_pcd_in);
