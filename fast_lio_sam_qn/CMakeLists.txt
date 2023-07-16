@@ -3,7 +3,16 @@ project(fast_lio_sam_qn)
 
 ### set compiler
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fexceptions -g -ggdb -fopenmp") #c++17, for parallel programming 
+set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fexceptions -g -ggdb") #c++17, for parallel programming 
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+include(FindOpenMP)
+if(OPENMP_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+else(OPENMP_FOUND)
+  message("ERROR: OpenMP could not be found.")
+endif(OPENMP_FOUND)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra ${CMAKE_CXX_FLAGS}")
 
 ### get packages
@@ -54,7 +63,7 @@ link_directories(${TBB2020_LIBRARY_DIR})
 ## Build ##
 ###########
 ### main
-set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} gtsam tbb)
+set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} ${OpenMP_LIBS} gtsam tbb)
 add_library(${PROJECT_NAME}_constructor src/constructor.cpp)
 target_link_libraries(${PROJECT_NAME}_constructor ${COMMON_LIBS})
 add_library(${PROJECT_NAME}_methods src/methods.cpp)

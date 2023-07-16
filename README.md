@@ -18,7 +18,7 @@
 
 <br>
 
-### Computational complexity) in KITTY seq 05 with i9-10900k CPU
+## Computational complexity in KITTY seq 05 with i9-10900k CPU
 + FAST-LIO-SAM: ~118% CPU usage, 125 times of ICP, 124.9ms consumption on average
 + FAST-LIO-SAM-N (only Nano-GICP): ~164% CPU usage, 130 times of ICP, 61.9ms consumption on average
 + FAST-LIO-SAM-QN: ~164% CPU usage, 130 times of ICP, 61.9ms consumption on average
@@ -64,7 +64,7 @@
 
 <br>
 
-### Structure
+## Structure
 + odom_pcd_cb
     + pub realtime pose in corrected frame
     + keyframe detection -> if keyframe, add to pose graph + save to keyframe queue
