@@ -86,9 +86,11 @@ void FAST_LIO_SAM_QN_CLASS::icp_key_to_subkeys(const pose_pcd &front_keyframe, c
 
   // then match with ICP
   pcl::PointCloud<pcl::PointXYZI> dummy_;
-  m_icp.setInputSource(src_);
-  m_icp.setInputTarget(dst_);
-  m_icp.align(dummy_);
+  m_nano_gicp.setInputSource(src_);
+  m_nano_gicp.calculateSourceCovariances();
+  m_nano_gicp.setInputTarget(dst_);
+  m_nano_gicp.calculateTargetCovariances();
+  m_nano_gicp.align(dummy_);
   m_debug_src_pub.publish(pcl_to_pcl_ros(src_raw_, m_map_frame));
   m_debug_dst_pub.publish(pcl_to_pcl_ros(dst_raw_, m_map_frame));
   m_debug_aligned_pub.publish(pcl_to_pcl_ros(dummy_, m_map_frame));

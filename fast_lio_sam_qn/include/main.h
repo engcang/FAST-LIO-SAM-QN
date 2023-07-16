@@ -33,7 +33,6 @@
 #include <pcl/conversions.h> //ros<->pcl
 #include <pcl_conversions/pcl_conversions.h> //ros<->pcl
 #include <pcl/filters/voxel_grid.h> //voxelgrid
-#include <pcl/registration/icp.h> //icp
 ///// Nano-GICP
 #include <nano_gicp/point_type_nano_gicp.hpp>
 #include <nano_gicp/nano_gicp.hpp>
@@ -91,7 +90,6 @@ class FAST_LIO_SAM_QN_CLASS
     double m_keyframe_thr;
     ///// loop
     pcl::VoxelGrid<pcl::PointXYZI> m_voxelgrid, m_voxelgrid_vis;
-    pcl::IterativeClosestPoint<pcl::PointXYZI, pcl::PointXYZI> m_icp;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     double m_icp_score_thr;
     double m_loop_det_radi;

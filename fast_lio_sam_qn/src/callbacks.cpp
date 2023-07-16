@@ -131,14 +131,14 @@ void FAST_LIO_SAM_QN_CLASS::loop_timer_func(const ros::TimerEvent& event)
   int closest_keyframe_idx_ = get_closest_keyframe_idx(not_proc_key_copy_, keyframes_copy_);
   if (closest_keyframe_idx_ >= 0) //if exists
   {
-    // ICP to check loop (from front_keyframe to closest keyframe's neighbor)
+    // NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
     icp_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_);
-    double score_ = m_icp.getFitnessScore();
+    double score_ = m_nano_gicp.getFitnessScore();
     cout << score_ << endl;
     // if matchness score is lower than threshold, (lower is better)
-    if(m_icp.hasConverged() && score_ < m_icp_score_thr) // add loop factor
+    if(m_nano_gicp.hasConverged() && score_ < m_icp_score_thr) // add loop factor
     {
-      Eigen::Matrix4d pose_between_eig_ = m_icp.getFinalTransformation().cast<double>();
+      Eigen::Matrix4d pose_between_eig_ = m_nano_gicp.getFinalTransformation().cast<double>();
       gtsam::Pose3 pose_from_ = pose_eig_to_gtsam_pose(pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig);
       gtsam::Pose3 pose_to_ = pose_eig_to_gtsam_pose(keyframes_copy_[closest_keyframe_idx_].pose_corrected_eig);
       gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());

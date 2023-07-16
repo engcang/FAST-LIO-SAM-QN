@@ -22,17 +22,30 @@ pose_pcd::pose_pcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCl
 FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) : m_nh(n_private)
 {
   ////// ROS params
-  // temp vars
+  // temp vars, only used in constructor
   double loop_update_hz_, vis_hz_;
+  int thread_number_, correspondences_number_, max_iter_, ransac_max_iter_;
+  double transformation_epsilon_, euclidean_fitness_epsilon_, ransac_outlier_rejection_threshold_;
   // get params
-  m_nh.param<string>("/map_frame", m_map_frame, "map");
-  m_nh.param<double>("/keyframe_threshold", m_keyframe_thr, 1.0);
-  m_nh.param<double>("/loop_detection_radius", m_loop_det_radi, 15.0);
-  m_nh.param<double>("/loop_detection_timediff_threshold", m_loop_det_tdiff_thr, 10.0);
-  m_nh.param<double>("/icp_score_threshold", m_icp_score_thr, 10.0);
-  m_nh.param<int>("/subkeyframes_number", m_sub_key_num, 5);
-  m_nh.param<double>("/loop_update_hz", loop_update_hz_, 1.0);
-  m_nh.param<double>("/vis_hz", vis_hz_, 0.5);
+  /* basic */
+  m_nh.param<string>("/basic/map_frame", m_map_frame, "map");
+  m_nh.param<double>("/basic/loop_update_hz", loop_update_hz_, 1.0);
+  m_nh.param<double>("/basic/vis_hz", vis_hz_, 0.5);
+  /* keyframe */
+  m_nh.param<double>("/keyframe/keyframe_threshold", m_keyframe_thr, 1.0);
+  m_nh.param<int>("/keyframe/subkeyframes_number", m_sub_key_num, 5);
+  /* loop */
+  m_nh.param<double>("/loop/loop_detection_radius", m_loop_det_radi, 15.0);
+  m_nh.param<double>("/loop/loop_detection_timediff_threshold", m_loop_det_tdiff_thr, 10.0);
+  /* nano */
+  m_nh.param<int>("/nano_gicp/thread_number", thread_number_, 0);
+  m_nh.param<double>("/nano_gicp/icp_score_threshold", m_icp_score_thr, 10.0);
+  m_nh.param<int>("/nano_gicp/correspondences_number", correspondences_number_, 15);
+  m_nh.param<int>("/nano_gicp/max_iter", max_iter_, 32);
+  m_nh.param<double>("/nano_gicp/transformation_epsilon", transformation_epsilon_, 0.01);
+  m_nh.param<double>("/nano_gicp/euclidean_fitness_epsilon", euclidean_fitness_epsilon_, 0.01);
+  m_nh.param<int>("/nano_gicp/ransac/max_iter", ransac_max_iter_, 5);
+  m_nh.param<double>("/nano_gicp/ransac/outlier_rejection_threshold", ransac_outlier_rejection_threshold_, 1.0);
 
   ////// GTSAM init
   gtsam::ISAM2Params isam_params_;
@@ -42,11 +55,15 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   ////// loop init
   m_voxelgrid.setLeafSize(0.3, 0.3, 0.3);
   m_voxelgrid_vis.setLeafSize(0.2, 0.2, 0.2);
-  m_icp.setMaxCorrespondenceDistance(m_loop_det_radi*2.0);
-  m_icp.setTransformationEpsilon(1e-2);
-  m_icp.setEuclideanFitnessEpsilon(1e-2);
-  m_icp.setMaximumIterations(100);
-  m_icp.setRANSACIterations(0);
+  ////// nano_gicp init
+  m_nano_gicp.setMaxCorrespondenceDistance(m_loop_det_radi*2.0);
+  m_nano_gicp.setNumThreads(thread_number_);
+  m_nano_gicp.setCorrespondenceRandomness(correspondences_number_);
+  m_nano_gicp.setMaximumIterations(max_iter_);
+  m_nano_gicp.setTransformationEpsilon(transformation_epsilon_);
+  m_nano_gicp.setEuclideanFitnessEpsilon(euclidean_fitness_epsilon_);
+  m_nano_gicp.setRANSACIterations(ransac_max_iter_);
+  m_nano_gicp.setRANSACOutlierRejectionThreshold(ransac_outlier_rejection_threshold_);
 
   ////// ROS things
   m_odom_path.header.frame_id = m_map_frame;
