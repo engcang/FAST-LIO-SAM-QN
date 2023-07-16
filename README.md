@@ -4,9 +4,9 @@
 <br>
 
 # FAST-LIO-SAM-QN
-+ This repository is a SLAM implementation combining [FAST-LIO2](https://github.com/hku-mars/FAST_LIO) with pose graph optimization and loop closing based on [Quatro](https://github.com/url-kaist/Quatro) and [Nano-GICP](https://github.com/vectr-ucla/direct_lidar_odometry)
++ This repository is a SLAM implementation combining [FAST-LIO2](https://github.com/hku-mars/FAST_LIO) with pose graph optimization and loop closing based on [Quatro](https://github.com/url-kaist/Quatro) and [Nano-GICP module](https://github.com/engcang/nano_gicp)
     + [Quatro](https://github.com/url-kaist/Quatro) - fast, accurate and robust global registration which provides great initial guess of transform
-    + [Nano-GICP](https://github.com/vectr-ucla/direct_lidar_odometry) - fast and accurate ICP combining [FastGICP](https://github.com/SMRT-AIST/fast_gicp) + [NanoFLANN](https://github.com/jlblancoc/nanoflann)
+    + [Nano-GICP module](https://github.com/engcang/nano_gicp) - fast ICP combining [FastGICP](https://github.com/SMRT-AIST/fast_gicp) + [NanoFLANN](https://github.com/jlblancoc/nanoflann)
 + Note: similar repositories already exist
     + [FAST_LIO_LC](https://github.com/yanliang-wang/FAST_LIO_LC): FAST-LIO2 + SC-A-LOAM based SLAM
     + [FAST_LIO_SLAM](https://github.com/gisbi-kim/FAST_LIO_SLAM): FAST-LIO2 + ScanContext based SLAM
@@ -19,7 +19,8 @@
 <br>
 
 ## Requirements
-+ ROS (it comes with `Eigen` and `PCL`)
++ `C++` >= 17, `OpenMP` >= 4.5, `CMake` >= 3.10.0, `Eigen` >= 3.3.7
++ `ROS` (it comes with `Eigen` and `PCL`)
 + [GTSAM](https://github.com/borglab/gtsam)
     ```shell
     wget -O gtsam.zip https://github.com/borglab/gtsam/archive/refs/tags/4.1.1.zip

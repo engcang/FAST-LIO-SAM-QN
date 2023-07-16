@@ -8,7 +8,7 @@
   </description>
   <maintainer email="eungchang_mason@kaist.ac.kr">Eungchang Mason Lee</maintainer>
 
-  <license>BSD3</license>
+  <license>TODO</license>
   
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
@@ -22,6 +22,7 @@
   <build_depend>pcl_ros</build_depend>
   <build_depend>pcl_conversions</build_depend>
   <build_depend>message_filters</build_depend>
+  <build_depend>nano_gicp</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>std_msgs</run_depend>
@@ -34,6 +35,7 @@
   <run_depend>pcl_ros</run_depend>
   <run_depend>pcl_conversions</run_depend>
   <run_depend>message_filters</run_depend>
+  <run_depend>nano_gicp</run_depend>
 
   <export>
   </export>

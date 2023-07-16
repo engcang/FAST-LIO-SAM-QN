@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.10)
 project(fast_lio_sam_qn)
 
 ### set compiler
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fexceptions -g -ggdb") #c++17, for parallel programming 
+set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fexceptions -g -ggdb -fopenmp") #c++17, for parallel programming 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra ${CMAKE_CXX_FLAGS}")
 
 ### get packages
@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   pcl_conversions
   message_filters
+  nano_gicp
 )
 find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
