@@ -1,4 +1,5 @@
 # Note
++ 2023-07-18: Only README and testing are left.
 + 2023-07-17: I am freaking lazy T^T. I will finish this within today.
 + 2023-07-12: The code is not implemented yet. The current code is just copy-pasted version of [former version](https://github.com/engcang/FAST-LIO-SAM). I am planning to finish this within this weekend.
 
@@ -18,14 +19,14 @@
 
 <br>
 
-## Computational complexity in KITTY seq 05 with i9-10900k CPU
-+ FAST-LIO-SAM: ~118% CPU usage, 125 times of ICP, 124.9ms consumption on average
-+ FAST-LIO-SAM-N (only Nano-GICP): ~164% CPU usage, 130 times of ICP, 61.9ms consumption on average
-+ FAST-LIO-SAM-QN: ~164% CPU usage, 130 times of ICP, 61.9ms consumption on average
+## Computational complexity <br>in KITTI seq. 05 with i9-10900k CPU
++ FAST-LIO-SAM: max 118% CPU usage, 125 times of ICP, 124.9ms consumption on average
++ FAST-LIO-SAM-N (only Nano-GICP): max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
++ FAST-LIO-SAM-QN: max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
 
 
 ## Dependencies
-+ `C++` >= 17, `OpenMP` >= 4.5, `CMake` >= 3.10.0, `Eigen` >= 3.3.7, `Boost` >= 1.54
++ `C++` >= 17, `OpenMP` >= 4.5, `CMake` >= 3.10.0, `Eigen` >= 3.2, `Boost` >= 1.54
 + `ROS`
 + [`GTSAM`](https://github.com/borglab/gtsam)
     ```shell

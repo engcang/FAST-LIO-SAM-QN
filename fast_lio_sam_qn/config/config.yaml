@@ -12,9 +12,9 @@ loop:
   loop_detection_radius: 35.0                 # unit [meter] within this radius, check if loop or not
   loop_detection_timediff_threshold: 30.0     # unit [sec] check if two keyframes are loop if times are farther than this
 
-quatro_nano_gicp_voxel_resolution: 0.3
+quatro_nano_gicp_voxel_resolution: 0.3        # voxel resolution to use Quatro and Nano-GICP matching
 
-nano_gicp:
+nano_gicp:                                    # all values are from Nano-GICP official github (Direct LiDAR Odometry)
   thread_number: 0                            # if 0, max number of core
   icp_score_threshold: 1.0                    # lower is more accurate, for loop detection
   correspondences_number: 15
@@ -25,12 +25,13 @@ nano_gicp:
     max_iter: 5
     outlier_rejection_threshold: 1.0
 
-quatro:
-  fpfh_normal_radius: 0.02
-  fpfh_radius: 0.04
-  estimating_scale: false
-  noise_bound: 0.25
+quatro:                                       # all values are from Quatro official github
+  fpfh_normal_radius: 0.5                     # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
+  fpfh_radius: 0.75                           # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
+  estimating_scale: false 
+  noise_bound: 0.3                            # The magnitude of uncertainty of measurements, the best is within v/2 ~ v (v: voxel resol.)
   rotation:
-    gnc_factor: 1.39
-    rot_cost_diff_threshold: 0.0001
-    num_max_iter: 50
+    num_max_iter: 50                          # Usually, rotation estimation converges within < 20 iterations
+    gnc_factor: 1.4                           # Control the magnitue of the increase in non-linearity. The larger the value, the steeper the increase in nonlinearity.
+    rot_cost_diff_threshold: 0.0001           # The cost threshold is compared with the difference between costs of consecutive iterations.
+                                              # Once the diff. of cost < `rot_cost_diff_threshold`, then the optimization is finished.

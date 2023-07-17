@@ -132,18 +132,17 @@ void FAST_LIO_SAM_QN_CLASS::loop_timer_func(const ros::TimerEvent& event)
   if (closest_keyframe_idx_ >= 0) //if exists
   {
     // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
+    bool converged_well_ = false;
+    double score_;
     high_resolution_clock::time_point t_for_time_check_ = high_resolution_clock::now();
-    icp_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_);
+    Eigen::Matrix4d pose_between_eig_ = icp_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
+    // Eigen::Matrix4d pose_between_eig_ = coarse_to_fine_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
     m_temp_time_counter += duration_cast<microseconds>(high_resolution_clock::now()-t_for_time_check_).count()/1e3;
     m_temp_counter++;
 
-    double score_ = m_nano_gicp.getFitnessScore();
-    cout << score_ << endl;
-    // if matchness score is lower than threshold, (lower is better)
-    if(m_nano_gicp.hasConverged() && score_ < m_icp_score_thr) // add loop factor
+    if(converged_well_) // add loop factor
     {
-      Eigen::Matrix4d pose_between_eig_ = m_nano_gicp.getFinalTransformation().cast<double>();
-      gtsam::Pose3 pose_from_ = pose_eig_to_gtsam_pose(pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig);
+      gtsam::Pose3 pose_from_ = pose_eig_to_gtsam_pose(pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
       gtsam::Pose3 pose_to_ = pose_eig_to_gtsam_pose(keyframes_copy_[closest_keyframe_idx_].pose_corrected_eig);
       gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
       {
@@ -217,7 +216,7 @@ void FAST_LIO_SAM_QN_CLASS::vis_timer_func(const ros::TimerEvent& event)
   //// 3. global map
   if (m_global_map_vis_switch && m_corrected_pcd_map_pub.getNumSubscribers() > 0) //save time, only once
   {
-    pcl::PointCloud<pcl::PointXYZI> corrected_map_;
+    pcl::PointCloud<PointType> corrected_map_;
     {
       lock_guard<mutex> lock(m_keyframes_mutex);
       for (int i = 0; i < m_keyframes.size(); ++i)

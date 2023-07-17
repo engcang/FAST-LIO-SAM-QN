@@ -12,7 +12,7 @@ pose_pcd::pose_pcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCl
   pose_eig(1, 3) = odom_in.pose.pose.position.y;
   pose_eig(2, 3) = odom_in.pose.pose.position.z;
   pose_corrected_eig = pose_eig;
-  pcl::PointCloud<pcl::PointXYZI> tmp_pcd_;
+  pcl::PointCloud<PointType> tmp_pcd_;
   pcl::fromROSMsg(pcd_in, tmp_pcd_);
   pcd = tf_pcd(tmp_pcd_, pose_eig.inverse()); //FAST-LIO publish data in world frame, so save it in LiDAR frame
   timestamp = odom_in.header.stamp.toSec();
@@ -78,7 +78,7 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   m_nano_gicp.setRANSACIterations(nano_ransac_max_iter_);
   m_nano_gicp.setRANSACOutlierRejectionThreshold(ransac_outlier_rejection_threshold_);
   ////// quatro init
-  m_quatro_handler = std::make_shared<quatro>(fpfh_normal_radius_, fpfh_radius_, noise_bound_, rot_gnc_factor_, rot_cost_diff_thr_, quatro_max_iter_, quatro_max_iter_);
+  m_quatro_handler = std::make_shared<quatro<PointType>>(fpfh_normal_radius_, fpfh_radius_, noise_bound_, rot_gnc_factor_, rot_cost_diff_thr_, quatro_max_iter_, quatro_max_iter_);
 
   ////// ROS things
   m_odom_path.header.frame_id = m_map_frame;

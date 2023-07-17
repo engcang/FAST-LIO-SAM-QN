@@ -29,9 +29,9 @@ visualization_msgs::Marker FAST_LIO_SAM_QN_CLASS::get_loop_markers(const gtsam::
   return edges_;
 }
 
-void FAST_LIO_SAM_QN_CLASS::voxelize_pcd(pcl::VoxelGrid<pcl::PointXYZI> &voxelgrid, pcl::PointCloud<pcl::PointXYZI> &pcd_in)
+void FAST_LIO_SAM_QN_CLASS::voxelize_pcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in)
 {
-  pcl::PointCloud<pcl::PointXYZI>::Ptr before_(new pcl::PointCloud<pcl::PointXYZI>);
+  pcl::PointCloud<PointType>::Ptr before_(new pcl::PointCloud<PointType>);
   *before_ = pcd_in;
   voxelgrid.setInputCloud(before_);
   voxelgrid.filter(pcd_in);
@@ -63,10 +63,12 @@ int FAST_LIO_SAM_QN_CLASS::get_closest_keyframe_idx(const pose_pcd &front_keyfra
   return closest_idx_;
 }
 
-void FAST_LIO_SAM_QN_CLASS::icp_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes)
+Eigen::Matrix4d FAST_LIO_SAM_QN_CLASS::icp_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes, bool &if_converged, double &score)
 {
-	// merge subkeyframes before ICP
-  pcl::PointCloud<pcl::PointXYZI> dst_raw_, src_raw_;
+  Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
+  if_converged = false;
+  // merge subkeyframes before ICP
+  pcl::PointCloud<PointType> dst_raw_, src_raw_;
   src_raw_ = tf_pcd(front_keyframe.pcd, front_keyframe.pose_corrected_eig);
   for (int i = closest_idx-m_sub_key_num; i < closest_idx+m_sub_key_num+1; ++i)
   {
@@ -75,32 +77,40 @@ void FAST_LIO_SAM_QN_CLASS::icp_key_to_subkeys(const pose_pcd &front_keyframe, c
       dst_raw_ += tf_pcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
     }
   }
-  
   // voxlize pcd
-  pcl::PointCloud<pcl::PointXYZI>::Ptr src_(new pcl::PointCloud<pcl::PointXYZI>);
-  pcl::PointCloud<pcl::PointXYZI>::Ptr dst_(new pcl::PointCloud<pcl::PointXYZI>);
   voxelize_pcd(m_voxelgrid, dst_raw_);
   voxelize_pcd(m_voxelgrid, src_raw_);
+  // then match with Nano-GICP
+  pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
+  pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
   *dst_ = dst_raw_;
   *src_ = src_raw_;
-
-  // then match with ICP
-  pcl::PointCloud<pcl::PointXYZI> dummy_;
+  pcl::PointCloud<PointType> aligned_;
   m_nano_gicp.setInputSource(src_);
   m_nano_gicp.calculateSourceCovariances();
   m_nano_gicp.setInputTarget(dst_);
   m_nano_gicp.calculateTargetCovariances();
-  m_nano_gicp.align(dummy_);
+  m_nano_gicp.align(aligned_);
+  // vis for debug
   m_debug_src_pub.publish(pcl_to_pcl_ros(src_raw_, m_map_frame));
   m_debug_dst_pub.publish(pcl_to_pcl_ros(dst_raw_, m_map_frame));
-  m_debug_fine_aligned_pub.publish(pcl_to_pcl_ros(dummy_, m_map_frame));
-	return;
+  m_debug_fine_aligned_pub.publish(pcl_to_pcl_ros(aligned_, m_map_frame));
+  // handle results
+  score = m_nano_gicp.getFitnessScore();
+  if(m_nano_gicp.hasConverged() && score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
+  {
+    if_converged = true;
+    output_tf_ = m_nano_gicp.getFinalTransformation().cast<double>();
+  }
+  return output_tf_;
 }
 
-void FAST_LIO_SAM_QN_CLASS::coarse_to_fine_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes)
+Eigen::Matrix4d FAST_LIO_SAM_QN_CLASS::coarse_to_fine_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes, bool &if_converged, double &score)
 {
-  // merge subkeyframes before match
-  pcl::PointCloud<pcl::PointXYZI> dst_raw_, src_raw_;
+  Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
+  if_converged = false;
+  // merge subkeyframes before ICP
+  pcl::PointCloud<PointType> dst_raw_, src_raw_;
   src_raw_ = tf_pcd(front_keyframe.pcd, front_keyframe.pose_corrected_eig);
   for (int i = closest_idx-m_sub_key_num; i < closest_idx+m_sub_key_num+1; ++i)
   {
@@ -109,25 +119,42 @@ void FAST_LIO_SAM_QN_CLASS::coarse_to_fine_key_to_subkeys(const pose_pcd &front_
       dst_raw_ += tf_pcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
     }
   }
-  
   // voxlize pcd
-  pcl::PointCloud<pcl::PointXYZI>::Ptr src_(new pcl::PointCloud<pcl::PointXYZI>);
-  pcl::PointCloud<pcl::PointXYZI>::Ptr dst_(new pcl::PointCloud<pcl::PointXYZI>);
   voxelize_pcd(m_voxelgrid, dst_raw_);
   voxelize_pcd(m_voxelgrid, src_raw_);
-  *dst_ = dst_raw_;
-  *src_ = src_raw_;
+  // then perform Quatro
+  Eigen::Matrix4d quatro_tf_ = m_quatro_handler->align(src_raw_, dst_raw_, if_converged);
+  if (!if_converged) return quatro_tf_;
+  else //if valid,
+  {
+    // coarse align with the result of Quatro
+    pcl::PointCloud<PointType> src_coarse_aligned_ = tf_pcd(src_raw_, quatro_tf_);
+    // then match with Nano-GICP
+    pcl::PointCloud<PointType> fine_aligned_;
+    pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
+    pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
+    *dst_ = dst_raw_;
+    *src_ = src_coarse_aligned_;
+    m_nano_gicp.setInputSource(src_);
+    m_nano_gicp.calculateSourceCovariances();
+    m_nano_gicp.setInputTarget(dst_);
+    m_nano_gicp.calculateTargetCovariances();
+    m_nano_gicp.align(fine_aligned_);
+    // handle results
+    score = m_nano_gicp.getFitnessScore();
+    if(m_nano_gicp.hasConverged() && score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
+    {
+      if_converged = true;
+      Eigen::Matrix4d icp_tf_ = m_nano_gicp.getFinalTransformation().cast<double>();
+      output_tf_ = icp_tf_ * quatro_tf_; // IMPORTANT: take care of the order
+    }
+    else if_converged = false;
+    // vis for debug
+    m_debug_src_pub.publish(pcl_to_pcl_ros(src_raw_, m_map_frame));
+    m_debug_dst_pub.publish(pcl_to_pcl_ros(dst_raw_, m_map_frame));
+    m_debug_coarse_aligned_pub.publish(pcl_to_pcl_ros(src_coarse_aligned_, m_map_frame));
+    m_debug_fine_aligned_pub.publish(pcl_to_pcl_ros(fine_aligned_, m_map_frame));
+  }
 
-  // then match with ICP
-  pcl::PointCloud<pcl::PointXYZI> dummy_;
-  m_nano_gicp.setInputSource(src_);
-  m_nano_gicp.calculateSourceCovariances();
-  m_nano_gicp.setInputTarget(dst_);
-  m_nano_gicp.calculateTargetCovariances();
-  m_nano_gicp.align(dummy_);
-  m_debug_src_pub.publish(pcl_to_pcl_ros(src_raw_, m_map_frame));
-  m_debug_dst_pub.publish(pcl_to_pcl_ros(dst_raw_, m_map_frame));
-  //m_debug_coarse_aligned_pub.publish(pcl_to_pcl_ros(dummy_, m_map_frame));
-  m_debug_fine_aligned_pub.publish(pcl_to_pcl_ros(dummy_, m_map_frame));
-  return;
+  return output_tf_;
 }

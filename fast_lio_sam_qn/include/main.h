@@ -53,13 +53,14 @@
 
 using namespace std;
 using namespace std::chrono;
+using PointType = pcl::PointXYZI;
 typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> odom_pcd_sync_pol;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 struct pose_pcd
 {
-  pcl::PointCloud<pcl::PointXYZI> pcd;
+  pcl::PointCloud<PointType> pcd;
   Eigen::Matrix4d pose_eig = Eigen::Matrix4d::Identity();
   Eigen::Matrix4d pose_corrected_eig = Eigen::Matrix4d::Identity();
   double timestamp;
@@ -93,9 +94,9 @@ class FAST_LIO_SAM_QN_CLASS
     gtsam::Values m_corrected_esti;
     double m_keyframe_thr;
     ///// loop
-    pcl::VoxelGrid<pcl::PointXYZI> m_voxelgrid, m_voxelgrid_vis;
+    pcl::VoxelGrid<PointType> m_voxelgrid, m_voxelgrid_vis;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
-    shared_ptr<quatro> m_quatro_handler = nullptr;
+    shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
     double m_icp_score_thr;
     double m_loop_det_radi;
     double m_loop_det_tdiff_thr;
@@ -126,11 +127,11 @@ class FAST_LIO_SAM_QN_CLASS
   private:
     //methods
     void update_vis_vars(const pose_pcd &pose_pcd_in);
-    void voxelize_pcd(pcl::VoxelGrid<pcl::PointXYZI> &voxelgrid, pcl::PointCloud<pcl::PointXYZI> &pcd_in);
+    void voxelize_pcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in);
     bool check_if_keyframe(const pose_pcd &pose_pcd_in, const pose_pcd &latest_pose_pcd);
     int get_closest_keyframe_idx(const pose_pcd &front_keyframe, const vector<pose_pcd> &keyframes);
-    void icp_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes);
-    void coarse_to_fine_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes);
+    Eigen::Matrix4d icp_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes, bool &if_converged, double &score);
+    Eigen::Matrix4d coarse_to_fine_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes, bool &if_converged, double &score);
     visualization_msgs::Marker get_loop_markers(const gtsam::Values &corrected_esti_in);
     //cb
     void odom_pcd_cb(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);

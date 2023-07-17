@@ -10,3 +10,6 @@
 [submodule "third_party/nano_gicp"]
 	path = third_party/nano_gicp
 	url = https://github.com/engcang/nano_gicp
+[submodule "third_party/Quatro"]
+	path = third_party/Quatro
+	url = https://github.com/engcang/Quatro
