@@ -5,8 +5,8 @@ project(fast_lio_sam_qn)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fexceptions -g -ggdb") #c++17, for parallel programming 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-include(FindOpenMP)
-if(OPENMP_FOUND)
+include(FindOpenMP) #For Nano-GICP, Quatro #The best way to set proper compiler settings for using OpenMP in all platforms
+if(OPENMP_FOUND) #For Nano-GICP, Quatro #The best way to set proper compiler settings for using OpenMP in all platforms
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
@@ -29,10 +29,12 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   message_filters
   nano_gicp
+  quatro
 )
 find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(GTSAM REQUIRED)
+# find_package(teaserpp REQUIRED)
 if(PCL_FOUND)
   message(WARNING "PCL_VER: ${PCL_VERSION}, and PCL_DIR: ${PCL_INCLUDE_DIRS}")
 endif()
@@ -42,6 +44,9 @@ endif()
 if(GTSAM_FOUND)
   message(WARNING "GTSAM_VER: ${GTSAM_VERSION}, and GTSAM DIR: ${GTSAM_INCLUDE_DIR}")
 endif()
+# if(teaserpp_FOUND)
+#   message(WARNING "teaserpp found")
+# endif()
 
 catkin_package() #this automatically adds/installs the results of build
 
@@ -52,6 +57,7 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
   ${GTSAM_INCLUDE_DIR}
+#   ${CMAKE_SOURCE_DIR}/../third_party/Quatro
 )
 #### for tbb
 set(TBB2020_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/../third_party/tbb-aarch64/dist/include") #CMAKE_CURRENT_SOURCE_DIR should be used when in add_subdirectory
@@ -63,7 +69,7 @@ link_directories(${TBB2020_LIBRARY_DIR})
 ## Build ##
 ###########
 ### main
-set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} ${OpenMP_LIBS} gtsam tbb)
+set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} ${OpenMP_LIBS} gtsam tbb) #teaserpp::teaser_registration teaserpp::teaser_io)
 add_library(${PROJECT_NAME}_constructor src/constructor.cpp)
 target_link_libraries(${PROJECT_NAME}_constructor ${COMMON_LIBS})
 add_library(${PROJECT_NAME}_methods src/methods.cpp)

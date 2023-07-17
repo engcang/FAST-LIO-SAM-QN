@@ -1,11 +1,11 @@
 # Note
++ 2023-07-17: I am freaking lazy T^T. I will finish this within today.
 + 2023-07-12: The code is not implemented yet. The current code is just copy-pasted version of [former version](https://github.com/engcang/FAST-LIO-SAM). I am planning to finish this within this weekend.
 
-<br>
 
 # FAST-LIO-SAM-QN
-+ This repository is a SLAM implementation combining [FAST-LIO2](https://github.com/hku-mars/FAST_LIO) with pose graph optimization and loop closing based on [Quatro](https://github.com/url-kaist/Quatro) and [Nano-GICP module](https://github.com/engcang/nano_gicp)
-    + [Quatro](https://github.com/url-kaist/Quatro) - fast, accurate and robust global registration which provides great initial guess of transform
++ This repository is a SLAM implementation combining [FAST-LIO2](https://github.com/hku-mars/FAST_LIO) with pose graph optimization and loop closing based on [Quatro](https://github.com/engcang/Quatro) and [Nano-GICP module](https://github.com/engcang/nano_gicp)
+    + [Quatro](https://github.com/engcang/Quatro) - fast, accurate and robust global registration which provides great initial guess of transform
     + [Nano-GICP module](https://github.com/engcang/nano_gicp) - fast ICP combining [FastGICP](https://github.com/SMRT-AIST/fast_gicp) + [NanoFLANN](https://github.com/jlblancoc/nanoflann)
 + Note: similar repositories already exist
     + [FAST_LIO_LC](https://github.com/yanliang-wang/FAST_LIO_LC): FAST-LIO2 + SC-A-LOAM based SLAM
@@ -24,10 +24,10 @@
 + FAST-LIO-SAM-QN: ~164% CPU usage, 130 times of ICP, 61.9ms consumption on average
 
 
-## Requirements
-+ `C++` >= 17, `OpenMP` >= 4.5, `CMake` >= 3.10.0, `Eigen` >= 3.3.7
-+ `ROS` (it comes with `Eigen` and `PCL`)
-+ [GTSAM](https://github.com/borglab/gtsam)
+## Dependencies
++ `C++` >= 17, `OpenMP` >= 4.5, `CMake` >= 3.10.0, `Eigen` >= 3.3.7, `Boost` >= 1.54
++ `ROS`
++ [`GTSAM`](https://github.com/borglab/gtsam)
     ```shell
     wget -O gtsam.zip https://github.com/borglab/gtsam/archive/refs/tags/4.1.1.zip
     unzip gtsam.zip
@@ -35,6 +35,14 @@
     mkdir build && cd build
     cmake -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF -DGTSAM_USE_SYSTEM_EIGEN=ON ..
     sudo make install -j16
+    ```
++ [`Teaser++`](https://github.com/MIT-SPARK/TEASER-plusplus)
+    ```shell
+    git clone https://github.com/MIT-SPARK/TEASER-plusplus.git
+    cd TEASER-plusplus && mkdir build && cd build
+    cmake .. && make -j16
+    sudo make install
+    sudo ldconfig
     ```
 
 ## How to build and use
@@ -50,8 +58,9 @@
     make -j16 && make install
 
     cd ~/your_workspace
-    #nano_gicp first
+    #nano_gicp, quatro first
     catkin build nano_gicp -DCMAKE_BUILD_TYPE=Release
+    catkin build quatro -DCMAKE_BUILD_TYPE=Release
     catkin build -DCMAKE_BUILD_TYPE=Release
     . devel/setup.bash
     ```

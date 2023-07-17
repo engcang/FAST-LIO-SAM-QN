@@ -93,6 +93,41 @@ void FAST_LIO_SAM_QN_CLASS::icp_key_to_subkeys(const pose_pcd &front_keyframe, c
   m_nano_gicp.align(dummy_);
   m_debug_src_pub.publish(pcl_to_pcl_ros(src_raw_, m_map_frame));
   m_debug_dst_pub.publish(pcl_to_pcl_ros(dst_raw_, m_map_frame));
-  m_debug_aligned_pub.publish(pcl_to_pcl_ros(dummy_, m_map_frame));
+  m_debug_fine_aligned_pub.publish(pcl_to_pcl_ros(dummy_, m_map_frame));
 	return;
+}
+
+void FAST_LIO_SAM_QN_CLASS::coarse_to_fine_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes)
+{
+  // merge subkeyframes before match
+  pcl::PointCloud<pcl::PointXYZI> dst_raw_, src_raw_;
+  src_raw_ = tf_pcd(front_keyframe.pcd, front_keyframe.pose_corrected_eig);
+  for (int i = closest_idx-m_sub_key_num; i < closest_idx+m_sub_key_num+1; ++i)
+  {
+    if (i>=0 && i < keyframes.size()-1) //if exists
+    {
+      dst_raw_ += tf_pcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+    }
+  }
+  
+  // voxlize pcd
+  pcl::PointCloud<pcl::PointXYZI>::Ptr src_(new pcl::PointCloud<pcl::PointXYZI>);
+  pcl::PointCloud<pcl::PointXYZI>::Ptr dst_(new pcl::PointCloud<pcl::PointXYZI>);
+  voxelize_pcd(m_voxelgrid, dst_raw_);
+  voxelize_pcd(m_voxelgrid, src_raw_);
+  *dst_ = dst_raw_;
+  *src_ = src_raw_;
+
+  // then match with ICP
+  pcl::PointCloud<pcl::PointXYZI> dummy_;
+  m_nano_gicp.setInputSource(src_);
+  m_nano_gicp.calculateSourceCovariances();
+  m_nano_gicp.setInputTarget(dst_);
+  m_nano_gicp.calculateTargetCovariances();
+  m_nano_gicp.align(dummy_);
+  m_debug_src_pub.publish(pcl_to_pcl_ros(src_raw_, m_map_frame));
+  m_debug_dst_pub.publish(pcl_to_pcl_ros(dst_raw_, m_map_frame));
+  //m_debug_coarse_aligned_pub.publish(pcl_to_pcl_ros(dummy_, m_map_frame));
+  m_debug_fine_aligned_pub.publish(pcl_to_pcl_ros(dummy_, m_map_frame));
+  return;
 }

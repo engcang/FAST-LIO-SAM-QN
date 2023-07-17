@@ -2,6 +2,7 @@ basic:
   map_frame: "map"                            # publish frame
   loop_update_hz: 2.0                         # Loop detection Hz
   vis_hz: 1.0                                 # visualize Hz
+  vis_pcd_voxel_resolution: 0.2
 
 keyframe:
   keyframe_threshold: 1.5                     # unit [meter] every this distance, generate keyframe
@@ -10,6 +11,8 @@ keyframe:
 loop:
   loop_detection_radius: 35.0                 # unit [meter] within this radius, check if loop or not
   loop_detection_timediff_threshold: 30.0     # unit [sec] check if two keyframes are loop if times are farther than this
+
+quatro_nano_gicp_voxel_resolution: 0.3
 
 nano_gicp:
   thread_number: 0                            # if 0, max number of core
@@ -21,3 +24,13 @@ nano_gicp:
   ransac:
     max_iter: 5
     outlier_rejection_threshold: 1.0
+
+quatro:
+  fpfh_normal_radius: 0.02
+  fpfh_radius: 0.04
+  estimating_scale: false
+  noise_bound: 0.25
+  rotation:
+    gnc_factor: 1.39
+    rot_cost_diff_threshold: 0.0001
+    num_max_iter: 50

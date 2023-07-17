@@ -131,7 +131,7 @@ void FAST_LIO_SAM_QN_CLASS::loop_timer_func(const ros::TimerEvent& event)
   int closest_keyframe_idx_ = get_closest_keyframe_idx(not_proc_key_copy_, keyframes_copy_);
   if (closest_keyframe_idx_ >= 0) //if exists
   {
-    // NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
+    // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
     high_resolution_clock::time_point t_for_time_check_ = high_resolution_clock::now();
     icp_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_);
     m_temp_time_counter += duration_cast<microseconds>(high_resolution_clock::now()-t_for_time_check_).count()/1e3;

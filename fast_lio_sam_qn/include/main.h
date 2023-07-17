@@ -36,6 +36,8 @@
 ///// Nano-GICP
 #include <nano_gicp/point_type_nano_gicp.hpp>
 #include <nano_gicp/nano_gicp.hpp>
+///// Quatro
+#include <quatro/quatro_module.h>
 ///// Eigen
 #include <Eigen/Eigen> // whole Eigen library: Sparse(Linearalgebra) + Dense(Core+Geometry+LU+Cholesky+SVD+QR+Eigenvalues)
 ///// GTSAM
@@ -93,6 +95,7 @@ class FAST_LIO_SAM_QN_CLASS
     ///// loop
     pcl::VoxelGrid<pcl::PointXYZI> m_voxelgrid, m_voxelgrid_vis;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
+    shared_ptr<quatro> m_quatro_handler = nullptr;
     double m_icp_score_thr;
     double m_loop_det_radi;
     double m_loop_det_tdiff_thr;
@@ -109,7 +112,7 @@ class FAST_LIO_SAM_QN_CLASS
     ros::Publisher m_corrected_odom_pub, m_corrected_path_pub, m_odom_pub, m_path_pub;
     ros::Publisher m_corrected_current_pcd_pub, m_corrected_pcd_map_pub, m_loop_detection_pub;
     ros::Publisher m_realtime_pose_pub;
-    ros::Publisher m_debug_src_pub, m_debug_dst_pub, m_debug_aligned_pub;
+    ros::Publisher m_debug_src_pub, m_debug_dst_pub, m_debug_coarse_aligned_pub, m_debug_fine_aligned_pub;
     ros::Timer m_loop_timer, m_vis_timer;
     // odom, pcd sync subscriber
     shared_ptr<message_filters::Synchronizer<odom_pcd_sync_pol>> m_sub_odom_pcd_sync = nullptr;
@@ -119,7 +122,7 @@ class FAST_LIO_SAM_QN_CLASS
     ///// functions
   public:
     FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private);
-    ~FAST_LIO_SAM_QN_CLASS(){cout<< endl << endl << endl << "asjdfsdf0sad9fs90df80f98sa90f80s9f8d09fs8ad90f8sd90f8s09sda8f09sd8f09sf8sd90f8sa09fs8f0saf8s09df890,,, "<< m_temp_counter << ", " << m_temp_time_counter << endl<< endl << endl;}
+    ~FAST_LIO_SAM_QN_CLASS(){cout<< endl << endl << endl << "LOOP Timer: "<< m_temp_counter << ", " << m_temp_time_counter << endl<< endl << endl;}
   private:
     //methods
     void update_vis_vars(const pose_pcd &pose_pcd_in);
@@ -127,6 +130,7 @@ class FAST_LIO_SAM_QN_CLASS
     bool check_if_keyframe(const pose_pcd &pose_pcd_in, const pose_pcd &latest_pose_pcd);
     int get_closest_keyframe_idx(const pose_pcd &front_keyframe, const vector<pose_pcd> &keyframes);
     void icp_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes);
+    void coarse_to_fine_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes);
     visualization_msgs::Marker get_loop_markers(const gtsam::Values &corrected_esti_in);
     //cb
     void odom_pcd_cb(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
