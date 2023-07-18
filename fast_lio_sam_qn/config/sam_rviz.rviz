@@ -66,8 +66,8 @@ Visualization Manager:
         - Alpha: 0.4000000059604645
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 14.770747184753418
-            Min Value: -8.980144500732422
+            Max Value: 4.738590240478516
+            Min Value: -6.385210990905762
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -348,14 +348,42 @@ Visualization Manager:
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
-          Name: aligned
+          Name: coarse_aligned
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
           Size (Pixels): 1
           Size (m): 0.05000000074505806
           Style: Flat Squares
-          Topic: /aligned
+          Topic: /coarse_aligned_quatro
+          Unreliable: false
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 10
+            Min Value: -10
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz/PointCloud2
+          Color: 237; 212; 0
+          Color Transformer: FlatColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Min Color: 0; 0; 0
+          Name: fine_aligned
+          Position Transformer: XYZ
+          Queue Size: 10
+          Selectable: true
+          Size (Pixels): 1
+          Size (m): 0.05000000074505806
+          Style: Flat Squares
+          Topic: /fine_aligned_nano_gicp
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -390,7 +418,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 311.30926513671875
+      Distance: 770.7904052734375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

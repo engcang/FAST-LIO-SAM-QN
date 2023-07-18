@@ -52,6 +52,7 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   m_nh.param<int>("/nano_gicp/ransac/max_iter", nano_ransac_max_iter_, 5);
   m_nh.param<double>("/nano_gicp/ransac/outlier_rejection_threshold", ransac_outlier_rejection_threshold_, 1.0);
   /* quatro */
+  m_nh.param<bool>("/quatro/enable", m_enable_quatro, false);
   m_nh.param<double>("/quatro/fpfh_normal_radius", fpfh_normal_radius_, 0.02);
   m_nh.param<double>("/quatro/fpfh_radius", fpfh_radius_, 0.04);
   m_nh.param<bool>("/quatro/estimating_scale", estimat_scale_, false);

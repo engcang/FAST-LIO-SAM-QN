@@ -1,9 +1,3 @@
-# Note
-+ 2023-07-18: Only README and testing are left.
-+ 2023-07-17: I am freaking lazy T^T. I will finish this within today.
-+ 2023-07-12: The code is not implemented yet. The current code is just copy-pasted version of [former version](https://github.com/engcang/FAST-LIO-SAM). I am planning to finish this within this weekend.
-
-
 # FAST-LIO-SAM-QN
 + This repository is a SLAM implementation combining [FAST-LIO2](https://github.com/hku-mars/FAST_LIO) with pose graph optimization and loop closing based on [Quatro](https://github.com/engcang/Quatro) and [Nano-GICP module](https://github.com/engcang/nano_gicp)
     + [Quatro](https://github.com/engcang/Quatro) - fast, accurate and robust global registration which provides great initial guess of transform
@@ -23,7 +17,7 @@
 + FAST-LIO-SAM: max 118% CPU usage, 125 times of ICP, 124.9ms consumption on average
 + FAST-LIO-SAM-N (only Nano-GICP): max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
 + FAST-LIO-SAM-QN: max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
-
++ Note: `loop_timer_func` runs at fixed `basic/loop_update_hz`. So how many times of ICP occured can be different depending on the speed of matching methods.
 
 ## Dependencies
 + `C++` >= 17, `OpenMP` >= 4.5, `CMake` >= 3.10.0, `Eigen` >= 3.2, `Boost` >= 1.54
@@ -41,8 +35,8 @@
     ```shell
     git clone https://github.com/MIT-SPARK/TEASER-plusplus.git
     cd TEASER-plusplus && mkdir build && cd build
-    cmake .. && make -j16
-    sudo make install
+    cmake .. -DENABLE_DIAGNOSTIC_PRINT=OFF
+    sudo make install -j16
     sudo ldconfig
     ```
 

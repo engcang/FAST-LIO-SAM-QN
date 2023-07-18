@@ -109,16 +109,10 @@ Eigen::Matrix4d FAST_LIO_SAM_QN_CLASS::coarse_to_fine_key_to_subkeys(const pose_
 {
   Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
   if_converged = false;
-  // merge subkeyframes before ICP
+  // Prepare the keyframes
   pcl::PointCloud<PointType> dst_raw_, src_raw_;
   src_raw_ = tf_pcd(front_keyframe.pcd, front_keyframe.pose_corrected_eig);
-  for (int i = closest_idx-m_sub_key_num; i < closest_idx+m_sub_key_num+1; ++i)
-  {
-    if (i>=0 && i < keyframes.size()-1) //if exists
-    {
-      dst_raw_ += tf_pcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
-    }
-  }
+  dst_raw_ = tf_pcd(keyframes[closest_idx].pcd, keyframes[closest_idx].pose_corrected_eig); //Note: Quatro should work on scan-to-scan (keyframe-to-keyframe), not keyframe-to-merged-many-keyframes
   // voxlize pcd
   voxelize_pcd(m_voxelgrid, dst_raw_);
   voxelize_pcd(m_voxelgrid, src_raw_);

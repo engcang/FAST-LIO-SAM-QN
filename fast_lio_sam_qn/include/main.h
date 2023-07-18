@@ -97,6 +97,7 @@ class FAST_LIO_SAM_QN_CLASS
     pcl::VoxelGrid<PointType> m_voxelgrid, m_voxelgrid_vis;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
+    bool m_enable_quatro = false;
     double m_icp_score_thr;
     double m_loop_det_radi;
     double m_loop_det_tdiff_thr;

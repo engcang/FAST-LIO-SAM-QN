@@ -9,7 +9,7 @@ Panels:
         - /mapping1/currPoints1
         - /mapping1/currPoints1/Autocompute Value Bounds1
       Splitter Ratio: 0.6432291865348816
-    Tree Height: 865
+    Tree Height: 441
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -206,7 +206,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 316.5472106933594
+      Distance: 699.7850341796875
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
