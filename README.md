@@ -16,8 +16,23 @@
 ## Computational complexity <br>in KITTI seq. 05 with i9-10900k CPU
 + FAST-LIO-SAM: max 118% CPU usage, 125 times of ICP, 124.9ms consumption on average
 + FAST-LIO-SAM-N (only Nano-GICP): max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
-+ FAST-LIO-SAM-QN: max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
++ FAST-LIO-SAM-QN: max 247% CPU usage, 66 times of ICP, 942ms consumption on average
 + Note: `loop_timer_func` runs at fixed `basic/loop_update_hz`. So how many times of ICP occured can be different depending on the speed of matching methods.
+
+<p align="center">
+  <img src="imgs/fast1.png" height="250"/>
+  <img src="imgs/sam1.png" height="250"/>
+  <img src="imgs/qn.png" height="250"/>
+  <br>
+  <em>KITTI seq 05 top view - (left): FAST-LIO2 (middle): FAST-LIO-SAM (bottom): FAST-LIO-SAM-QN</em>
+</p>
+<p align="center">
+  <img src="imgs/fast2.png" width="500"/>
+  <img src="imgs/sam2.png" width="500"/>
+  <img src="imgs/qn_side.png" width="500"/>
+  <br>
+  <em>KITTI seq 05 side view - (top): FAST-LIO2 (middle): FAST-LIO-SAM (bottom): FAST-LIO-SAM-QN</em>
+</p>
 
 ## Dependencies
 + `C++` >= 17, `OpenMP` >= 4.5, `CMake` >= 3.10.0, `Eigen` >= 3.2, `Boost` >= 1.54
