@@ -26,7 +26,7 @@ nano_gicp:                                    # all values are from Nano-GICP of
     outlier_rejection_threshold: 1.0
 
 quatro:                                       # all values are from Quatro official github
-  enable: true                                # whther or not to use quatro
+  enable: true                                # whether or not to use quatro, if false -> FAST-LIO-SAM-N (Nano-GICP only)
   fpfh_normal_radius: 0.5                     # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
   fpfh_radius: 0.75                           # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
   estimating_scale: false 

@@ -9,7 +9,7 @@
 	
 	<!-- run fast_lio_sam_qn -->
 	<rosparam command="load" file="$(find fast_lio_sam_qn)/config/config.yaml" />
-	<node pkg="fast_lio_sam_qn" type="fast_lio_sam_qn_node" name="fast_lio_sam_qn_node" output="screen"/> 
+	<node pkg="fast_lio_sam_qn" type="fast_lio_sam_qn_node" name="fast_lio_sam_qn_node" output="screen" launch-prefix="gdb -ex run --args"/> 
 
 	<!-- run fast_lio -->
 	<include if="$(eval arg ('lidar') == 'ouster')" file="$(find fast_lio)/launch/mapping_ouster64.launch">

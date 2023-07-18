@@ -73,8 +73,6 @@ struct pose_pcd
 class FAST_LIO_SAM_QN_CLASS
 {
   private:
-    int m_temp_counter = 0;
-    double m_temp_time_counter = 0.0;
     ///// basic params
     string m_map_frame;
     ///// shared data - odom and pcd
@@ -124,7 +122,6 @@ class FAST_LIO_SAM_QN_CLASS
     ///// functions
   public:
     FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private);
-    ~FAST_LIO_SAM_QN_CLASS(){cout<< endl << endl << endl << "LOOP Timer: "<< m_temp_counter << ", " << m_temp_time_counter << endl<< endl << endl;}
   private:
     //methods
     void update_vis_vars(const pose_pcd &pose_pcd_in);

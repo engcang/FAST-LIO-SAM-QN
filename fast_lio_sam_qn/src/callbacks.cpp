@@ -135,11 +135,8 @@ void FAST_LIO_SAM_QN_CLASS::loop_timer_func(const ros::TimerEvent& event)
     bool converged_well_ = false;
     double score_;
     Eigen::Matrix4d pose_between_eig_ = Eigen::Matrix4d::Identity();
-    high_resolution_clock::time_point t_for_time_check_ = high_resolution_clock::now();
     if (m_enable_quatro) pose_between_eig_ = coarse_to_fine_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
     else pose_between_eig_ = icp_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
-    m_temp_time_counter += duration_cast<microseconds>(high_resolution_clock::now()-t_for_time_check_).count()/1e3;
-    m_temp_counter++;
 
     if(converged_well_) // add loop factor
     {
