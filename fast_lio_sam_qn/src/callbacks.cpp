@@ -17,6 +17,12 @@ void FAST_LIO_SAM_QN_CLASS::odom_pcd_cb(const nav_msgs::OdometryConstPtr &odom_m
     gtsam::noiseModel::Diagonal::shared_ptr prior_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4).finished()); // rad*rad, meter*meter
     m_gtsam_graph.add(gtsam::PriorFactor<gtsam::Pose3>(0, pose_eig_to_gtsam_pose(m_current_frame.pose_eig), prior_noise_));
     m_init_esti.insert(m_current_keyframe_idx, pose_eig_to_gtsam_pose(m_current_frame.pose_eig));
+    {
+      lock_guard<mutex> lock(m_realtime_pose_mutex);
+      m_odom_delta = m_odom_delta * last_odom_tf_.inverse() * m_current_frame.pose_eig;
+      m_current_frame.pose_corrected_eig = m_last_corrected_pose * m_odom_delta;
+      m_realtime_pose_pub.publish(pose_eig_to_pose_stamped(m_current_frame.pose_corrected_eig, m_map_frame));
+    }
     m_current_keyframe_idx++;
     m_init = true;
   }
