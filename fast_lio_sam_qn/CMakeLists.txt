@@ -54,17 +54,13 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
   ${GTSAM_INCLUDE_DIR}
 )
-#### for tbb
-set(TBB2020_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/../third_party/tbb-aarch64/dist/include") #CMAKE_CURRENT_SOURCE_DIR should be used when in add_subdirectory
-set(TBB2020_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/../third_party/tbb-aarch64/dist/lib")
-include_directories(${TBB2020_INCLUDE_DIR})
-link_directories(${TBB2020_LIBRARY_DIR})
+
 
 ###########
 ## Build ##
 ###########
 ### main
-set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} ${OpenMP_LIBS} gtsam tbb)
+set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} ${OpenMP_LIBS} gtsam)
 add_library(${PROJECT_NAME}_constructor src/constructor.cpp)
 target_link_libraries(${PROJECT_NAME}_constructor ${COMMON_LIBS})
 add_library(${PROJECT_NAME}_methods src/methods.cpp)

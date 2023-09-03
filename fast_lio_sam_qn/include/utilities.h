@@ -3,7 +3,6 @@
 
 ///// common headers
 #include <string>
-#include <execution>
 ///// ROS
 #include <ros/ros.h>
 #include <tf/LinearMath/Quaternion.h> // to Quaternion_to_euler
@@ -17,12 +16,14 @@
 #include <pcl/point_cloud.h> //cloud
 #include <pcl/conversions.h> //ros<->pcl
 #include <pcl_conversions/pcl_conversions.h> //ros<->pcl
+#include <pcl/common/transforms.h>
 ///// Eigen
 #include <Eigen/Eigen> // whole Eigen library: Sparse(Linearalgebra) + Dense(Core+Geometry+LU+Cholesky+SVD+QR+Eigenvalues)
 ///// GTSAM
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Point3.h>
 #include <gtsam/geometry/Pose3.h>
+
 
 using namespace std;
 //////////////////////////////////////////////////////////////////////
@@ -88,22 +89,13 @@ sensor_msgs::PointCloud2 pcl_to_pcl_ros(pcl::PointCloud<T> cloud, string frame_i
 	cloud_ROS.header.frame_id = frame_id;
 	return cloud_ROS;
 }
-
 ///// transformation
 template <typename T>
 pcl::PointCloud<T> tf_pcd(const pcl::PointCloud<T> &cloud_in, const Eigen::Matrix4d &pose_tf)
 {
 	if (cloud_in.size() == 0) return cloud_in;
 	pcl::PointCloud<T> pcl_out_ = cloud_in;
-	std::for_each(std::execution::par_unseq, pcl_out_.begin(), pcl_out_.end(), [&](T &pt)
-	{
-		float x_ = pt.x;
-		float y_ = pt.y;
-		float z_ = pt.z;
-		pt.x = pose_tf(0, 0) * x_ + pose_tf(0, 1) * y_ + pose_tf(0, 2) * z_ + pose_tf(0, 3);
-		pt.y = pose_tf(1, 0) * x_ + pose_tf(1, 1) * y_ + pose_tf(1, 2) * z_ + pose_tf(1, 3);
-		pt.z = pose_tf(2, 0) * x_ + pose_tf(2, 1) * y_ + pose_tf(2, 2) * z_ + pose_tf(2, 3);
-	});
+	pcl::transformPointCloud(cloud_in, pcl_out_, pose_tf);
 	return pcl_out_;
 }
 

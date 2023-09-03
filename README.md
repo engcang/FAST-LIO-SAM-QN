@@ -56,21 +56,23 @@
     ```
 
 ## How to build and use
-+ Get the code, build `tbb` first, and then build the main code
-    + `tbb` is only used for faster `pcl::transformPointCloud`, you can just remove it by replacing `tf_pcd` with `pcl::transformPointCloud`
++ Get the code, build `tbb` first, and then build the main code. `tbb` is used for faster `Quatro`
     ```shell
     cd ~/your_workspace/src
     git clone https://github.com/engcang/FAST-LIO-SAM-QN --recursive
 
-    cd FAST-LIO-SAM-QN/third_party/tbb-aarch64
-    ./scripts/bootstrap-aarch64-linux.sh
-    cd build-aarch64
+    # Note the directory
+    cd FAST-LIO-SAM-QN/third_party/oneTBB && mkdir build installed
+    cd build
+    # Note the directory
+    cmake .. -DCMAKE_INSTALL_PREFIX=../installed -DTBB_TEST=OFF -DCMAKE_BUILD_TYPE=Release
     make -j16 && make install
 
     cd ~/your_workspace
-    #nano_gicp, quatro first
+    # nano_gicp, quatro first
     catkin build nano_gicp -DCMAKE_BUILD_TYPE=Release
-    catkin build quatro -DCMAKE_BUILD_TYPE=Release
+    # Note the option!
+    catkin build quatro -DCMAKE_BUILD_TYPE=Release -DQUATRO_TBB=ON
     catkin build -DCMAKE_BUILD_TYPE=Release
     . devel/setup.bash
     ```

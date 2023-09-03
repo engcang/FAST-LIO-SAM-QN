@@ -4,12 +4,12 @@
 [submodule "third_party/livox_ros_driver"]
 	path = third_party/livox_ros_driver
 	url = https://github.com/Livox-SDK/livox_ros_driver
-[submodule "third_party/tbb-aarch64"]
-	path = third_party/tbb-aarch64
-	url = https://github.com/syoyo/tbb-aarch64
 [submodule "third_party/nano_gicp"]
 	path = third_party/nano_gicp
 	url = https://github.com/engcang/nano_gicp
 [submodule "third_party/Quatro"]
 	path = third_party/Quatro
 	url = https://github.com/engcang/Quatro
+[submodule "third_party/oneTBB"]
+	path = third_party/oneTBB
+	url = https://github.com/oneapi-src/oneTBB
