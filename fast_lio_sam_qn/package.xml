@@ -12,6 +12,8 @@
   
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>roslib</build_depend>
+  <build_depend>rosbag</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
@@ -26,6 +28,8 @@
   <build_depend>quatro</build_depend>
 
   <run_depend>roscpp</run_depend>
+  <run_depend>roslib</run_depend>
+  <run_depend>rosbag</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
