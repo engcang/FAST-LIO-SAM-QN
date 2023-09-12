@@ -116,19 +116,6 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
 FAST_LIO_SAM_QN_CLASS::~FAST_LIO_SAM_QN_CLASS()
 {
   // save map
-  if (m_save_map_pcd)
-  {
-    pcl::PointCloud<PointType> corrected_map_;
-    {
-      lock_guard<mutex> lock(m_keyframes_mutex);
-      for (int i = 0; i < m_keyframes.size(); ++i)
-      {
-        corrected_map_ += tf_pcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
-      }
-    }
-    pcl::io::savePCDFileASCII<PointType> (m_package_path+"/result.pcd", corrected_map_);
-    cout << "\033[32;1mResult saved in .pcd format!!!\033[0m" << endl;
-  }
   if (m_save_map_bag)
   {
     rosbag::Bag bag_;
@@ -145,5 +132,18 @@ FAST_LIO_SAM_QN_CLASS::~FAST_LIO_SAM_QN_CLASS()
     }
     bag_.close();
     cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << endl;
+  }
+  if (m_save_map_pcd)
+  {
+    pcl::PointCloud<PointType> corrected_map_;
+    {
+      lock_guard<mutex> lock(m_keyframes_mutex);
+      for (int i = 0; i < m_keyframes.size(); ++i)
+      {
+        corrected_map_ += tf_pcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+      }
+    }
+    pcl::io::savePCDFileASCII<PointType> (m_package_path+"/result.pcd", corrected_map_);
+    cout << "\033[32;1mResult saved in .pcd format!!!\033[0m" << endl;
   }
 }
