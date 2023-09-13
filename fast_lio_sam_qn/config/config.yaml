@@ -38,5 +38,5 @@ quatro:                                       # all values are from Quatro offic
                                               # Once the diff. of cost < `rot_cost_diff_threshold`, then the optimization is finished.
 
 result:
-  save_map_pcd: true                          # Save result map in .pcd format, not voxelized and hence file size could be huge
+  save_map_pcd: false                         # Save result map in .pcd format, not voxelized and hence file size could be huge
   save_map_bag: true                          # Save result map in .bag format, NOTE: this is used for FAST-LIO-Localization-QN (https://github.com/engcang/FAST-LIO-Localization-QN)
