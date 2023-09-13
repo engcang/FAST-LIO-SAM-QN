@@ -20,6 +20,7 @@
 #include <tf/LinearMath/Matrix3x3.h> // to Quaternion_to_euler
 #include <tf/transform_datatypes.h> // createQuaternionFromRPY
 #include <tf_conversions/tf_eigen.h> // tf <-> eigen
+#include <tf/transform_broadcaster.h> // broadcaster
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -108,6 +109,7 @@ class FAST_LIO_SAM_QN_CLASS
     bool m_loop_added_flag = false; //for opt
     bool m_loop_added_flag_vis = false; //for vis
     ///// visualize
+    tf::TransformBroadcaster m_broadcaster;
     pcl::PointCloud<pcl::PointXYZ> m_odoms, m_corrected_odoms;
     nav_msgs::Path m_odom_path, m_corrected_path;
     bool m_global_map_vis_switch = true;
