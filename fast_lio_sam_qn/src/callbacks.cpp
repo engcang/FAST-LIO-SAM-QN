@@ -42,7 +42,7 @@ void FAST_LIO_SAM_QN_CLASS::odom_pcd_cb(const nav_msgs::OdometryConstPtr &odom_m
       geometry_msgs::PoseStamped current_pose_stamped_ = pose_eig_to_pose_stamped(m_current_frame.pose_corrected_eig, m_map_frame);
       m_realtime_pose_pub.publish(current_pose_stamped_);
       tf::Transform transform_;
-      transform_.setOrigin(tf::Vector3(current_pose_stamped_.pose.position.x, current_pose_stamped_.pose.position.x, current_pose_stamped_.pose.position.x));
+      transform_.setOrigin(tf::Vector3(current_pose_stamped_.pose.position.x, current_pose_stamped_.pose.position.y, current_pose_stamped_.pose.position.z));
       transform_.setRotation(tf::Quaternion(current_pose_stamped_.pose.orientation.x, current_pose_stamped_.pose.orientation.y, current_pose_stamped_.pose.orientation.z, current_pose_stamped_.pose.orientation.w));
       m_broadcaster.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), m_map_frame, "robot"));
     }
