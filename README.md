@@ -96,3 +96,9 @@
         + detect loop -> if loop, add to pose graph
 + vis_timer_func
     + visualize all **(Note: global map is only visualized once uncheck/check the mapped_pcd in rviz to save comp.)**
+
+<br>
+
+## Memo
++ `Quatro` module fixed for empty matches
++ `Quatro` module will be updated for match downsampling (toooo many matches degenerate the speed)
