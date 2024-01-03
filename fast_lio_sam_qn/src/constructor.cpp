@@ -25,10 +25,12 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   // temp vars, only used in constructor
   double loop_update_hz_, vis_hz_;
   double vis_pcd_vox_res_, quatro_gicp_vox_res_;
-  int nano_thread_number_, nano_correspondences_number_, nano_max_iter_, nano_ransac_max_iter_, quatro_max_iter_;
+  int nano_thread_number_, nano_correspondences_number_, nano_max_iter_;
+  int nano_ransac_max_iter_, quatro_max_iter_, quatro_max_corres_;
   double transformation_epsilon_, euclidean_fitness_epsilon_, ransac_outlier_rejection_threshold_;
   double fpfh_normal_radius_, fpfh_radius_, noise_bound_, rot_gnc_factor_, rot_cost_diff_thr_;
-  bool estimat_scale_;
+  double quatro_distance_threshold_;
+  bool estimat_scale_, use_optimized_matching_;
   // get params
   /* basic */
   m_nh.param<string>("/basic/map_frame", m_map_frame, "map");
@@ -53,6 +55,9 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   m_nh.param<double>("/nano_gicp/ransac/outlier_rejection_threshold", ransac_outlier_rejection_threshold_, 1.0);
   /* quatro */
   m_nh.param<bool>("/quatro/enable", m_enable_quatro, false);
+  m_nh.param<bool>("/quatro/optimize_matching", use_optimized_matching_, true);
+  m_nh.param<double>("/quatro/distance_threshold", quatro_distance_threshold_, 30.0);
+  m_nh.param<int>("/quatro/max_correspondences", quatro_max_corres_, 200);
   m_nh.param<double>("/quatro/fpfh_normal_radius", fpfh_normal_radius_, 0.02);
   m_nh.param<double>("/quatro/fpfh_radius", fpfh_radius_, 0.04);
   m_nh.param<bool>("/quatro/estimating_scale", estimat_scale_, false);
@@ -82,7 +87,8 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   m_nano_gicp.setRANSACIterations(nano_ransac_max_iter_);
   m_nano_gicp.setRANSACOutlierRejectionThreshold(ransac_outlier_rejection_threshold_);
   ////// quatro init
-  m_quatro_handler = std::make_shared<quatro<PointType>>(fpfh_normal_radius_, fpfh_radius_, noise_bound_, rot_gnc_factor_, rot_cost_diff_thr_, quatro_max_iter_, estimat_scale_);
+  m_quatro_handler = std::make_shared<quatro<PointType>>(fpfh_normal_radius_, fpfh_radius_, noise_bound_, rot_gnc_factor_, rot_cost_diff_thr_,
+                                                        quatro_max_iter_, estimat_scale_, use_optimized_matching_, quatro_distance_threshold_, quatro_max_corres_);
 
   ////// ROS things
   m_odom_path.header.frame_id = m_map_frame;

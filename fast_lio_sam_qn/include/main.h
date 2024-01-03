@@ -77,6 +77,8 @@ struct pose_pcd
 class FAST_LIO_SAM_QN_CLASS
 {
   private:
+    int quatro_counter = 0;
+    double time_spent = 0.0;
     ///// basic params
     string m_map_frame;
     string m_package_path;

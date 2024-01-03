@@ -17,8 +17,10 @@
 ## Computational complexity <br>in KITTI seq. 05 with i9-10900k CPU
 + FAST-LIO-SAM: max 118% CPU usage, 125 times of ICP, 124.9ms consumption on average
 + FAST-LIO-SAM-N (only Nano-GICP): max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
-+ FAST-LIO-SAM-QN: max 247% CPU usage, 66 times of ICP, 942ms consumption on average
-+ Note: `loop_timer_func` runs at fixed `basic/loop_update_hz`. So how many times of ICP occured can be different depending on the speed of matching methods.
++ FAST-LIO-SAM-QN: 
+    + Advanced matching - max 325% CPU usage, 85 times of ICP, 140ms consumption on average
+    + Optimized matching (with max 200 correspondences downsampling) - max 569% CPU usage, 90 times of ICP, 128.6ms consumption on average
++ Note: `loop_timer_func` runs at fixed `basic/loop_update_hz`. So how many times of ICP occurred can be different depending on the speed of matching methods.
 
 <p align="center">
   <img src="imgs/fast1.png" height="250"/>
@@ -55,19 +57,16 @@
     sudo make install -j16
     sudo ldconfig
     ```
++ `tbb` (is used for faster `Quatro`)
+    ```shell
+    sudo apt install libtbb-dev
+    ```
 
 ## How to build and use
-+ Get the code, build `tbb` first, and then build the main code. `tbb` is used for faster `Quatro`
++ Get the code and then build the main code.
     ```shell
     cd ~/your_workspace/src
     git clone https://github.com/engcang/FAST-LIO-SAM-QN --recursive
-
-    # Note the directory
-    cd FAST-LIO-SAM-QN/third_party/oneTBB && mkdir build installed
-    cd build
-    # Note the directory
-    cmake .. -DCMAKE_INSTALL_PREFIX=../installed -DTBB_TEST=OFF -DCMAKE_BUILD_TYPE=Release
-    make -j16 && make install
 
     cd ~/your_workspace
     # nano_gicp, quatro first
@@ -101,4 +100,4 @@
 
 ## Memo
 + `Quatro` module fixed for empty matches
-+ `Quatro` module will be updated for match downsampling (toooo many matches degenerate the speed)
++ `Quatro` module is updated with `optimizedMatching` which limits the number of correspondences and increased the speed

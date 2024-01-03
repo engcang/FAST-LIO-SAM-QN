@@ -27,6 +27,9 @@ nano_gicp:                                    # all values are from Nano-GICP of
 
 quatro:                                       # all values are from Quatro official github
   enable: true                                # whether or not to use quatro, if false -> FAST-LIO-SAM-N (Nano-GICP only)
+  optimize_matching: true                     # whether or not to use Optimized matching
+  distance_threshold: 30.0                    # when optimized matching, use only correspondences within this radius, unit [meter]
+  max_correspondences: 200                    # max correspondences to use for optimized matching 
   fpfh_normal_radius: 0.5                     # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
   fpfh_radius: 0.75                           # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
   estimating_scale: false 
