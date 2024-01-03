@@ -151,15 +151,11 @@ void FAST_LIO_SAM_QN_CLASS::loop_timer_func(const ros::TimerEvent& event)
     bool converged_well_ = false;
     double score_;
     Eigen::Matrix4d pose_between_eig_ = Eigen::Matrix4d::Identity();
-    high_resolution_clock::time_point temp1_ = high_resolution_clock::now();
     if (m_enable_quatro) pose_between_eig_ = coarse_to_fine_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
     else pose_between_eig_ = icp_key_to_subkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
 
     if(converged_well_) // add loop factor
     {
-      high_resolution_clock::time_point temp2_ = high_resolution_clock::now();
-      quatro_counter++;
-      time_spent += duration_cast<microseconds>(temp2_ - temp1_).count()/1e3;
       ROS_WARN("[Quatro] %d, %.1fms", quatro_counter, time_spent);
       gtsam::Pose3 pose_from_ = pose_eig_to_gtsam_pose(pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
       gtsam::Pose3 pose_to_ = pose_eig_to_gtsam_pose(keyframes_copy_[closest_keyframe_idx_].pose_corrected_eig);
