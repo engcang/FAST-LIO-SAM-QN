@@ -10,6 +10,3 @@
 [submodule "third_party/Quatro"]
 	path = third_party/Quatro
 	url = https://github.com/engcang/Quatro
-[submodule "third_party/oneTBB"]
-	path = third_party/oneTBB
-	url = https://github.com/oneapi-src/oneTBB
