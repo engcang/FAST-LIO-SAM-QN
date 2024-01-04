@@ -4,7 +4,7 @@
 	<arg name="lidar" default="ouster" /> <!-- ouster, velodyne, livox -->
 
 	<!-- visualize -->
-	<node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz_lio" args="-d $(find fast_lio_sam_qn)/config/lio_rviz.rviz" launch-prefix="nice"/>
+	<!-- <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz_lio" args="-d $(find fast_lio_sam_qn)/config/lio_rviz.rviz" launch-prefix="nice"/> -->
 	<node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz_sam" args="-d $(find fast_lio_sam_qn)/config/sam_rviz.rviz" launch-prefix="nice"/>
 	
 	<!-- run fast_lio_sam_qn -->

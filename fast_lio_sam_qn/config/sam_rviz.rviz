@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /mapping1
         - /mapping1/curr_pcd1/Autocompute Value Bounds1
+        - /mapping1/curr_pcd_stack1
         - /debug1
       Splitter Ratio: 0.6432291865348816
     Tree Height: 865
@@ -66,8 +67,8 @@ Visualization Manager:
         - Alpha: 0.4000000059604645
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 4.738590240478516
-            Min Value: -6.385210990905762
+            Max Value: 4.987763404846191
+            Min Value: -9.990096092224121
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -130,7 +131,7 @@ Visualization Manager:
           Class: rviz/PointCloud2
           Color: 255; 255; 255
           Color Transformer: Intensity
-          Decay Time: 1000
+          Decay Time: 50
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
@@ -271,7 +272,7 @@ Visualization Manager:
       Marker Topic: /loop_detection
       Name: loop_constraints
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Group
@@ -418,16 +419,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 770.7904052734375
+      Distance: 873.52880859375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -42.90613555908203
-        Y: -87.62625122070312
-        Z: 0.08612675219774246
+        X: 118.79090881347656
+        Y: 12.880097389221191
+        Z: -0.007899249903857708
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -454,5 +455,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1247
-  X: 2393
+  X: 1736
   Y: 335
