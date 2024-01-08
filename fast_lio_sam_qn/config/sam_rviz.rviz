@@ -10,7 +10,7 @@ Panels:
         - /mapping1/curr_pcd_stack1
         - /debug1
       Splitter Ratio: 0.6432291865348816
-    Tree Height: 865
+    Tree Height: 441
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: curr_pcd
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -67,8 +67,8 @@ Visualization Manager:
         - Alpha: 0.4000000059604645
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 4.987763404846191
-            Min Value: -9.990096092224121
+            Max Value: 37.83192825317383
+            Min Value: -2.407393217086792
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -104,7 +104,7 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -119,7 +119,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 0.5
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -130,8 +130,8 @@ Visualization Manager:
           Channel Name: intensity
           Class: rviz/PointCloud2
           Color: 255; 255; 255
-          Color Transformer: Intensity
-          Decay Time: 50
+          Color Transformer: FlatColor
+          Decay Time: 500
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
@@ -168,13 +168,13 @@ Visualization Manager:
     - Alpha: 0
       Buffer Length: 2
       Class: rviz/Path
-      Color: 52; 101; 164
+      Color: 0; 155; 255
       Enabled: true
       Head Diameter: 0
       Head Length: 0
       Length: 0.30000001192092896
       Line Style: Billboards
-      Line Width: 0.15000000596046448
+      Line Width: 0.20000000298023224
       Name: Path
       Offset:
         X: 0
@@ -197,7 +197,7 @@ Visualization Manager:
       Head Length: 0
       Length: 0.30000001192092896
       Line Style: Billboards
-      Line Width: 0.15000000596046448
+      Line Width: 0.20000000298023224
       Name: corrected_Path
       Offset:
         X: 0
@@ -220,7 +220,7 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 114; 159; 207
+      Color: 0; 59; 255
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
@@ -232,7 +232,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.5
+      Size (m): 0.800000011920929
       Style: Spheres
       Topic: /ori_odom
       Unreliable: false
@@ -260,7 +260,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.5
+      Size (m): 0.800000011920929
       Style: Spheres
       Topic: /corrected_odom
       Unreliable: false
@@ -272,7 +272,7 @@ Visualization Manager:
       Marker Topic: /loop_detection
       Name: loop_constraints
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Group
@@ -286,7 +286,7 @@ Visualization Manager:
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
-          Color: 204; 0; 0
+          Color: 255; 0; 0
           Color Transformer: FlatColor
           Decay Time: 0
           Enabled: true
@@ -297,9 +297,9 @@ Visualization Manager:
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
-          Size (Pixels): 1
-          Size (m): 0.05000000074505806
-          Style: Flat Squares
+          Size (Pixels): 2
+          Size (m): 0.10000000149011612
+          Style: Points
           Topic: /src
           Unreliable: false
           Use Fixed Frame: true
@@ -314,7 +314,7 @@ Visualization Manager:
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
-          Color: 52; 101; 164
+          Color: 0; 101; 255
           Color Transformer: FlatColor
           Decay Time: 0
           Enabled: true
@@ -325,9 +325,9 @@ Visualization Manager:
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
-          Size (Pixels): 1
-          Size (m): 0.05000000074505806
-          Style: Flat Squares
+          Size (Pixels): 2
+          Size (m): 0.10000000149011612
+          Style: Points
           Topic: /dst
           Unreliable: false
           Use Fixed Frame: true
@@ -342,7 +342,7 @@ Visualization Manager:
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
-          Color: 138; 226; 52
+          Color: 252; 233; 79
           Color Transformer: FlatColor
           Decay Time: 0
           Enabled: true
@@ -353,9 +353,9 @@ Visualization Manager:
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
-          Size (Pixels): 1
-          Size (m): 0.05000000074505806
-          Style: Flat Squares
+          Size (Pixels): 2
+          Size (m): 0.10000000149011612
+          Style: Points
           Topic: /coarse_aligned_quatro
           Unreliable: false
           Use Fixed Frame: true
@@ -370,7 +370,7 @@ Visualization Manager:
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
-          Color: 237; 212; 0
+          Color: 0; 255; 0
           Color Transformer: FlatColor
           Decay Time: 0
           Enabled: true
@@ -381,15 +381,15 @@ Visualization Manager:
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
-          Size (Pixels): 1
-          Size (m): 0.05000000074505806
-          Style: Flat Squares
+          Size (Pixels): 2
+          Size (m): 0.10000000149011612
+          Style: Points
           Topic: /fine_aligned_nano_gicp
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-      Enabled: false
+      Enabled: true
       Name: debug
   Enabled: true
   Global Options:
@@ -419,25 +419,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 873.52880859375
+      Distance: 179.57247924804688
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 118.79090881347656
-        Y: 12.880097389221191
-        Z: -0.007899249903857708
+        X: 0
+        Y: 0
+        Z: 0
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
-      Target Frame: <Fixed Frame>
+      Pitch: 0.7853981852531433
+      Target Frame: robot
       Value: Orbit (rviz)
-      Yaw: 1.6103976964950562
+      Yaw: 0.7853981852531433
     Saved: ~
 Window Geometry:
   Displays:
@@ -455,5 +455,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1247
-  X: 1736
+  X: 2393
   Y: 335

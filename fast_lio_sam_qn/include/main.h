@@ -9,6 +9,7 @@
 #include <cmath>
 #include <chrono> //time check
 #include <vector>
+#include <deque>
 #include <mutex>
 #include <string>
 #include <utility> // pair, make_pair
@@ -55,14 +56,13 @@
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/ISAM2.h>
 
-using namespace std;
 using namespace std::chrono;
 using PointType = pcl::PointXYZI;
 typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> odom_pcd_sync_pol;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-struct pose_pcd
+struct PosePcd
 {
   pcl::PointCloud<PointType> pcd;
   Eigen::Matrix4d pose_eig = Eigen::Matrix4d::Identity();
@@ -70,26 +70,26 @@ struct pose_pcd
   double timestamp;
   int idx;
   bool processed = false;
-  pose_pcd(){};
-  pose_pcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
+  PosePcd(){};
+  PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-class FAST_LIO_SAM_QN_CLASS
+class FastLioSamQnClass
 {
   private:
     ///// basic params
-    string m_map_frame;
-    string m_package_path;
+    std::string m_map_frame;
+    std::string m_package_path;
     ///// shared data - odom and pcd
-    mutex m_realtime_pose_mutex, m_keyframes_mutex;
-    mutex m_graph_mutex, m_vis_mutex;
-    bool m_init=false;
-    int m_current_keyframe_idx = 0;
-    pose_pcd m_current_frame;
-    vector<pose_pcd> m_keyframes;
-    pose_pcd m_not_processed_keyframe;
+    std::mutex m_realtime_pose_mutex, m_keyframes_mutex;
+    std::mutex m_graph_mutex, m_vis_mutex;
     Eigen::Matrix4d m_last_corrected_pose = Eigen::Matrix4d::Identity();
     Eigen::Matrix4d m_odom_delta = Eigen::Matrix4d::Identity();
+    PosePcd m_current_frame;
+    std::vector<PosePcd> m_keyframes;
+    std::deque<PosePcd> m_not_processed_keyframes;
+    int m_current_keyframe_idx = 0;
+    bool m_init = false;
     ///// graph and values
     shared_ptr<gtsam::ISAM2> m_isam_handler = nullptr;
     gtsam::NonlinearFactorGraph m_gtsam_graph;
@@ -100,12 +100,10 @@ class FAST_LIO_SAM_QN_CLASS
     pcl::VoxelGrid<PointType> m_voxelgrid, m_voxelgrid_vis;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
-    bool m_enable_quatro = false;
-    double m_icp_score_thr;
-    double m_loop_det_radi;
-    double m_loop_det_tdiff_thr;
+    bool m_enable_quatro = false, m_sub_to_sub_match = false;
+    double m_icp_score_thr, m_loop_det_radi, m_loop_det_tdiff_thr;
     int m_sub_key_num;
-    vector<pair<int, int>> m_loop_idx_pairs; //for vis
+    std::vector<pair<int, int>> m_loop_idx_pairs; //for vis
     bool m_loop_added_flag = false; //for opt
     bool m_loop_added_flag_vis = false; //for vis
     ///// visualize
@@ -129,21 +127,27 @@ class FAST_LIO_SAM_QN_CLASS
 
     ///// functions
   public:
-    FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private);
-    ~FAST_LIO_SAM_QN_CLASS();
+    FastLioSamQnClass(const ros::NodeHandle& n_private);
+    ~FastLioSamQnClass();
   private:
     //methods
-    void update_vis_vars(const pose_pcd &pose_pcd_in);
-    void voxelize_pcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in);
-    bool check_if_keyframe(const pose_pcd &pose_pcd_in, const pose_pcd &latest_pose_pcd);
-    int get_closest_keyframe_idx(const pose_pcd &front_keyframe, const vector<pose_pcd> &keyframes);
-    Eigen::Matrix4d icp_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes, bool &if_converged, double &score);
-    Eigen::Matrix4d coarse_to_fine_key_to_subkeys(const pose_pcd &front_keyframe, const int &closest_idx, const vector<pose_pcd> &keyframes, bool &if_converged, double &score);
-    visualization_msgs::Marker get_loop_markers(const gtsam::Values &corrected_esti_in);
+    void updateVisVars(const PosePcd &pose_pcd_in);
+    void voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in);
+    bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
+    int getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes);
+    Eigen::Matrix4d icpKeyToSubkeys(const PosePcd &front_keyframe, const int &closest_idx, 
+                                    const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
+    Eigen::Matrix4d coarseToFineKeyToKey(const PosePcd &front_keyframe, const int &closest_idx,
+                                         const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
+    Eigen::Matrix4d icpSubkeysToSubkeys(const std::deque<PosePcd> &front_keyframes, const int& not_processed_idx,
+                                        const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
+    Eigen::Matrix4d coarseToFineSubkeysToSubkeys(const std::deque<PosePcd> &front_keyframes, const int& not_processed_idx,
+                                                 const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
+    visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
-    void odom_pcd_cb(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
-    void loop_timer_func(const ros::TimerEvent& event);
-    void vis_timer_func(const ros::TimerEvent& event);
+    void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
+    void loopTimerFunc(const ros::TimerEvent& event);
+    void visTimerFunc(const ros::TimerEvent& event);
 };
 
 

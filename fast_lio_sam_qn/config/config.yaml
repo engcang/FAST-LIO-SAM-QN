@@ -2,11 +2,13 @@ basic:
   map_frame: "map"                            # publish frame
   loop_update_hz: 2.0                         # Loop detection Hz
   vis_hz: 1.0                                 # visualize Hz
-  vis_pcd_voxel_resolution: 0.2
 
 keyframe:
   keyframe_threshold: 1.5                     # unit [meter] every this distance, generate keyframe
-  subkeyframes_number: 5                      # how many subkeyframes are merged to ICP with current keyframe (closest-this ~ closest+this, if exists)
+  subkeyframes_number: 10                      # how many subkeyframes are merged to ICP with current keyframe (closest-this ~ closest+this, if exists)
+  use_sub_to_sub_matching: true               # Currently not stable
+                                              # Set true for harsh environments only...
+                                              # if true, use subkeyframes to subkeyframes matching, if false, use subkeyframes to keyframe matching
 
 loop:
   loop_detection_radius: 35.0                 # unit [meter] within this radius, check if loop or not
@@ -16,7 +18,7 @@ quatro_nano_gicp_voxel_resolution: 0.3        # voxel resolution to use Quatro a
 
 nano_gicp:                                    # all values are from Nano-GICP official github (Direct LiDAR Odometry)
   thread_number: 0                            # if 0, max number of core
-  icp_score_threshold: 1.0                    # lower is more accurate, for loop detection
+  icp_score_threshold: 2.0                    # lower is more accurate, for loop detection
   correspondences_number: 15
   max_iter: 32
   transformation_epsilon: 0.01
@@ -28,10 +30,10 @@ nano_gicp:                                    # all values are from Nano-GICP of
 quatro:                                       # all values are from Quatro official github
   enable: true                                # whether or not to use quatro, if false -> FAST-LIO-SAM-N (Nano-GICP only)
   optimize_matching: true                     # whether or not to use Optimized matching
-  distance_threshold: 30.0                    # when optimized matching, use only correspondences within this radius, unit [meter]
-  max_correspondences: 300                    # max correspondences to use for optimized matching 
-  fpfh_normal_radius: 0.5                     # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
-  fpfh_radius: 0.75                           # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
+  distance_threshold: 35.0                    # when optimized matching, use only correspondences within this radius, unit [meter]
+  max_correspondences: 500                    # max correspondences to use for optimized matching 
+  fpfh_normal_radius: 0.6                     # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
+  fpfh_radius: 0.9                            # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
   estimating_scale: false 
   noise_bound: 0.3                            # The magnitude of uncertainty of measurements, the best is within v/2 ~ v (v: voxel resol.)
   rotation:

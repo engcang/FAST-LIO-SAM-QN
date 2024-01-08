@@ -1,7 +1,7 @@
 #include "main.h"
 
 
-pose_pcd::pose_pcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in)
+PosePcd::PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in)
 {
   tf::Quaternion q_(odom_in.pose.pose.orientation.x, odom_in.pose.pose.orientation.y, odom_in.pose.pose.orientation.z, odom_in.pose.pose.orientation.w);
   tf::Matrix3x3 m_(q_);
@@ -14,17 +14,17 @@ pose_pcd::pose_pcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCl
   pose_corrected_eig = pose_eig;
   pcl::PointCloud<PointType> tmp_pcd_;
   pcl::fromROSMsg(pcd_in, tmp_pcd_);
-  pcd = tf_pcd(tmp_pcd_, pose_eig.inverse()); //FAST-LIO publish data in world frame, so save it in LiDAR frame
+  pcd = transformPcd(tmp_pcd_, pose_eig.inverse()); //FAST-LIO publish data in world frame, so save it in LiDAR frame
   timestamp = odom_in.header.stamp.toSec();
   idx = idx_in;
 }
 
-FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) : m_nh(n_private)
+FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_private)
 {
   ////// ROS params
   // temp vars, only used in constructor
   double loop_update_hz_, vis_hz_;
-  double vis_pcd_vox_res_, quatro_gicp_vox_res_;
+  double quatro_gicp_vox_res_;
   int nano_thread_number_, nano_correspondences_number_, nano_max_iter_;
   int nano_ransac_max_iter_, quatro_max_iter_, quatro_max_corres_;
   double transformation_epsilon_, euclidean_fitness_epsilon_, ransac_outlier_rejection_threshold_;
@@ -33,14 +33,14 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   bool estimat_scale_, use_optimized_matching_;
   // get params
   /* basic */
-  m_nh.param<string>("/basic/map_frame", m_map_frame, "map");
+  m_nh.param<std::string>("/basic/map_frame", m_map_frame, "map");
   m_nh.param<double>("/basic/loop_update_hz", loop_update_hz_, 1.0);
   m_nh.param<double>("/basic/vis_hz", vis_hz_, 0.5);
-  m_nh.param<double>("/basic/vis_pcd_voxel_resolution", vis_pcd_vox_res_, 0.2);
   m_nh.param<double>("/quatro_nano_gicp_voxel_resolution", quatro_gicp_vox_res_, 0.3);
   /* keyframe */
   m_nh.param<double>("/keyframe/keyframe_threshold", m_keyframe_thr, 1.0);
   m_nh.param<int>("/keyframe/subkeyframes_number", m_sub_key_num, 5);
+  m_nh.param<bool>("/keyframe/use_sub_to_sub_matching", m_sub_to_sub_match, false);
   /* loop */
   m_nh.param<double>("/loop/loop_detection_radius", m_loop_det_radi, 15.0);
   m_nh.param<double>("/loop/loop_detection_timediff_threshold", m_loop_det_tdiff_thr, 10.0);
@@ -76,7 +76,6 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   m_isam_handler = std::make_shared<gtsam::ISAM2>(isam_params_);
   ////// loop init
   m_voxelgrid.setLeafSize(quatro_gicp_vox_res_, quatro_gicp_vox_res_, quatro_gicp_vox_res_);
-  m_voxelgrid_vis.setLeafSize(vis_pcd_vox_res_, vis_pcd_vox_res_, vis_pcd_vox_res_);
   ////// nano_gicp init
   m_nano_gicp.setMaxCorrespondenceDistance(m_loop_det_radi*2.0);
   m_nano_gicp.setNumThreads(nano_thread_number_);
@@ -111,15 +110,15 @@ FAST_LIO_SAM_QN_CLASS::FAST_LIO_SAM_QN_CLASS(const ros::NodeHandle& n_private) :
   m_sub_odom = std::make_shared<message_filters::Subscriber<nav_msgs::Odometry>>(m_nh, "/Odometry", 10);
   m_sub_pcd = std::make_shared<message_filters::Subscriber<sensor_msgs::PointCloud2>>(m_nh, "/cloud_registered", 10);
   m_sub_odom_pcd_sync = std::make_shared<message_filters::Synchronizer<odom_pcd_sync_pol>>(odom_pcd_sync_pol(10), *m_sub_odom, *m_sub_pcd);
-  m_sub_odom_pcd_sync->registerCallback(boost::bind(&FAST_LIO_SAM_QN_CLASS::odom_pcd_cb, this, _1, _2));
+  m_sub_odom_pcd_sync->registerCallback(boost::bind(&FastLioSamQnClass::odomPcdCallback, this, _1, _2));
   // Timers at the end
-  m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FAST_LIO_SAM_QN_CLASS::loop_timer_func, this);
-  m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FAST_LIO_SAM_QN_CLASS::vis_timer_func, this);
+  m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FastLioSamQnClass::loopTimerFunc, this);
+  m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FastLioSamQnClass::visTimerFunc, this);
   
   ROS_WARN("Main class, starting node...");
 }
 
-FAST_LIO_SAM_QN_CLASS::~FAST_LIO_SAM_QN_CLASS()
+FastLioSamQnClass::~FastLioSamQnClass()
 {
   // save map
   if (m_save_map_bag)
@@ -127,13 +126,13 @@ FAST_LIO_SAM_QN_CLASS::~FAST_LIO_SAM_QN_CLASS()
     rosbag::Bag bag_;
     bag_.open(m_package_path+"/result.bag", rosbag::bagmode::Write);
     {
-      lock_guard<mutex> lock(m_keyframes_mutex);
+      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
       for (int i = 0; i < m_keyframes.size(); ++i)
       {
         ros::Time time_;
         time_.fromSec(m_keyframes[i].timestamp);
-        bag_.write("/keyframe_pcd", time_, pcl_to_pcl_ros(m_keyframes[i].pcd, m_map_frame));
-        bag_.write("/keyframe_pose", time_, pose_eig_to_pose_stamped(m_keyframes[i].pose_corrected_eig));
+        bag_.write("/keyframe_pcd", time_, pclToPclRos(m_keyframes[i].pcd, m_map_frame));
+        bag_.write("/keyframe_pose", time_, poseEigToPoseStamped(m_keyframes[i].pose_corrected_eig));
       }
     }
     bag_.close();
@@ -143,10 +142,10 @@ FAST_LIO_SAM_QN_CLASS::~FAST_LIO_SAM_QN_CLASS()
   {
     pcl::PointCloud<PointType> corrected_map_;
     {
-      lock_guard<mutex> lock(m_keyframes_mutex);
+      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
       for (int i = 0; i < m_keyframes.size(); ++i)
       {
-        corrected_map_ += tf_pcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+        corrected_map_ += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
       }
     }
     pcl::io::savePCDFileASCII<PointType> (m_package_path+"/result.pcd", corrected_map_);
