@@ -57,21 +57,7 @@ void FastLioSamQnClass::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_m
       {
         std::lock_guard<std::mutex> lock(m_keyframes_mutex);
         m_keyframes.push_back(m_current_frame);
-        m_not_processed_keyframes.push_front(m_current_frame); //to check loop in another thread
-        if (m_sub_to_sub_match)
-        {
-          while (m_not_processed_keyframes.size() > m_sub_key_num * 2 + 1)
-          {
-            m_not_processed_keyframes.pop_back();
-          }
-        }
-        else
-        {
-          while (m_not_processed_keyframes.size() > 1)
-          {
-            m_not_processed_keyframes.pop_back();
-          }
-        }
+        m_not_processed_keyframe = m_current_frame; //to check loop in another thread        
       }
       // 2-3. if so, add to graph
       gtsam::noiseModel::Diagonal::shared_ptr odom_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 1e-4, 1e-4, 1e-4, 1e-2, 1e-2, 1e-2).finished());
@@ -144,73 +130,50 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
 
   //// 1. copy keyframes and not processed keyframes
   high_resolution_clock::time_point t1_ = high_resolution_clock::now();
-  std::deque<PosePcd> not_proc_key_copy_;
+  PosePcd not_proc_key_copy_;
   std::vector<PosePcd> keyframes_copy_;
-  int not_processed_idx_ = -1;
   {
     std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-    for (int i = 0; i < m_not_processed_keyframes.size(); i++)
+    if (!m_not_processed_keyframe.processed)
     {
-      if (!m_not_processed_keyframes[i].processed)
-      {
-        not_processed_idx_ = i;
-        m_not_processed_keyframes[i].processed = true;
-        not_proc_key_copy_ = m_not_processed_keyframes;
-        break;
-      }
-    }
-    if (not_processed_idx_ >= 0)
-    {
-      keyframes_copy_ = m_keyframes; //saving computation
+      not_proc_key_copy_ = m_not_processed_keyframe;
+      m_not_processed_keyframe.processed = true;
+      keyframes_copy_ = m_keyframes;
     }
   }
-  if (not_processed_idx_ < 0) return; //already processed
+  if (not_proc_key_copy_.idx == 0 || not_proc_key_copy_.processed || keyframes_copy_.empty()) return; //already processed
 
   //// 2. detect loop and add to graph
   high_resolution_clock::time_point t2_ = high_resolution_clock::now();
   bool if_loop_occured_ = false;
   // from not_proc_key_copy_ keyframe to old keyframes in threshold radius, get the closest keyframe
-  int closest_keyframe_idx_ = getClosestKeyframeIdx(not_proc_key_copy_[not_processed_idx_], keyframes_copy_);
+  int closest_keyframe_idx_ = getClosestKeyframeIdx(not_proc_key_copy_, keyframes_copy_);
   if (closest_keyframe_idx_ >= 0) //if exists
   {
     // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
     bool converged_well_ = false;
     double score_;
     Eigen::Matrix4d pose_between_eig_ = Eigen::Matrix4d::Identity();
-    if (m_enable_quatro)
+    if (m_enable_quatro) 
     {
-      if (m_sub_to_sub_match)
-      {
-        pose_between_eig_ = coarseToFineSubkeysToSubkeys(not_proc_key_copy_, not_processed_idx_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
-      }
-      else
-      {
-        pose_between_eig_ = coarseToFineKeyToKey(not_proc_key_copy_[not_processed_idx_], closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
-      }
+      pose_between_eig_ = coarseToFineKeyToKey(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
     }
     else
     {
-      if (m_sub_to_sub_match)
-      {
-        pose_between_eig_ = icpSubkeysToSubkeys(not_proc_key_copy_, not_processed_idx_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
-      }
-      else
-      {
-        pose_between_eig_ = icpKeyToSubkeys(not_proc_key_copy_[not_processed_idx_], closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
-      }
+      pose_between_eig_ = icpKeyToSubkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
     }
 
     ROS_WARN("!!!!!!!!!!!!!!!!!!!!!! score: %.3f", score_);
     if(converged_well_) // add loop factor
     {
-      gtsam::Pose3 pose_from_ = poseEigToGtsamPose(pose_between_eig_ * not_proc_key_copy_[not_processed_idx_].pose_corrected_eig); //IMPORTANT: take care of the order
+      gtsam::Pose3 pose_from_ = poseEigToGtsamPose(pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
       gtsam::Pose3 pose_to_ = poseEigToGtsamPose(keyframes_copy_[closest_keyframe_idx_].pose_corrected_eig);
       gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
       {
         std::lock_guard<std::mutex> lock(m_graph_mutex);
-        m_gtsam_graph.add(gtsam::BetweenFactor<gtsam::Pose3>(not_proc_key_copy_[not_processed_idx_].idx, closest_keyframe_idx_, pose_from_.between(pose_to_), loop_noise_));
+        m_gtsam_graph.add(gtsam::BetweenFactor<gtsam::Pose3>(not_proc_key_copy_.idx, closest_keyframe_idx_, pose_from_.between(pose_to_), loop_noise_));
       }
-      m_loop_idx_pairs.push_back({not_proc_key_copy_[not_processed_idx_].idx, closest_keyframe_idx_}); //for vis
+      m_loop_idx_pairs.push_back({not_proc_key_copy_.idx, closest_keyframe_idx_}); //for vis
       if_loop_occured_ = true;
     }
   }

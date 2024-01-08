@@ -43,7 +43,7 @@ bool FastLioSamQnClass::checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePc
   return m_keyframe_thr < (latest_pose_pcd.pose_corrected_eig.block<3, 1>(0, 3) - pose_pcd_in.pose_corrected_eig.block<3, 1>(0, 3)).norm();
 }
 
-int FastLioSamQnClass::getClosestKeyframeIdx(const PosePcd &front_keyframe, const vector<PosePcd> &keyframes)
+int FastLioSamQnClass::getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes)
 {
   double shortest_distance_ = m_loop_det_radi*3.0;
   int closest_idx_ = -1;
@@ -63,7 +63,7 @@ int FastLioSamQnClass::getClosestKeyframeIdx(const PosePcd &front_keyframe, cons
   return closest_idx_;
 }
 
-Eigen::Matrix4d FastLioSamQnClass::icpKeyToSubkeys(const PosePcd &front_keyframe, const int &closest_idx, const vector<PosePcd> &keyframes, bool &if_converged, double &score)
+Eigen::Matrix4d FastLioSamQnClass::icpKeyToSubkeys(const PosePcd &front_keyframe, const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score)
 {
   Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
   if_converged = false;
@@ -104,7 +104,7 @@ Eigen::Matrix4d FastLioSamQnClass::icpKeyToSubkeys(const PosePcd &front_keyframe
   return output_tf_;
 }
 
-Eigen::Matrix4d FastLioSamQnClass::coarseToFineKeyToKey(const PosePcd &front_keyframe, const int &closest_idx, const vector<PosePcd> &keyframes, bool &if_converged, double &score)
+Eigen::Matrix4d FastLioSamQnClass::coarseToFineKeyToKey(const PosePcd &front_keyframe, const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score)
 {
   Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
   if_converged = false;

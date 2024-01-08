@@ -85,9 +85,8 @@ class FastLioSamQnClass
     std::mutex m_graph_mutex, m_vis_mutex;
     Eigen::Matrix4d m_last_corrected_pose = Eigen::Matrix4d::Identity();
     Eigen::Matrix4d m_odom_delta = Eigen::Matrix4d::Identity();
-    PosePcd m_current_frame;
+    PosePcd m_current_frame, m_not_processed_keyframe;
     std::vector<PosePcd> m_keyframes;
-    std::deque<PosePcd> m_not_processed_keyframes;
     int m_current_keyframe_idx = 0;
     bool m_init = false;
     ///// graph and values
@@ -100,7 +99,7 @@ class FastLioSamQnClass
     pcl::VoxelGrid<PointType> m_voxelgrid, m_voxelgrid_vis;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
-    bool m_enable_quatro = false, m_sub_to_sub_match = false;
+    bool m_enable_quatro = false;
     double m_icp_score_thr, m_loop_det_radi, m_loop_det_tdiff_thr;
     int m_sub_key_num;
     std::vector<pair<int, int>> m_loop_idx_pairs; //for vis
