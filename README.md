@@ -14,6 +14,8 @@
 
 <br>
 
+## Video clip - https://youtu.be/MQ8XxRY472Y
+
 ## Computational complexity <br>in KITTI seq. 05 with i9-10900k CPU
 + FAST-LIO-SAM: max 118% CPU usage, 125 times of ICP, 124.9ms consumption on average
 + FAST-LIO-SAM-N (only Nano-GICP): max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
