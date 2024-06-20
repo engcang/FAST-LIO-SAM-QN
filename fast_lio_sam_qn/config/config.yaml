@@ -29,8 +29,8 @@ quatro:                                       # all values are from Quatro offic
   optimize_matching: true                     # whether or not to use Optimized matching
   distance_threshold: 35.0                    # when optimized matching, use only correspondences within this radius, unit [meter]
   max_correspondences: 500                    # max correspondences to use for optimized matching 
-  fpfh_normal_radius: 0.6                     # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
-  fpfh_radius: 0.9                            # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
+  fpfh_normal_radius: 0.9                     # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
+  fpfh_radius: 1.5                            # should satisfy the following condition: fpfh_radius >= 1.5 * fpfh_normal_radius
   estimating_scale: false 
   noise_bound: 0.3                            # The magnitude of uncertainty of measurements, the best is within v/2 ~ v (v: voxel resol.)
   rotation:
