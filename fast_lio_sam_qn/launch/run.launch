@@ -24,10 +24,13 @@
 	<include if="$(eval arg ('lidar') == 'hilti')" file="$(find fast_lio)/launch/hilti.launch">
 		<arg name="rviz" value="false"/>
 	</include>
-	<include if="$(eval arg ('lidar') == 'kitti')" file="$(find fast_lio)/launch/kitti.launch">
+	<include if="$(eval arg ('lidar') == 'kitti')" file="$(find fast_lio)/../fastlio_config_launch/kitti.launch">
 		<arg name="rviz" value="false"/>
 	</include>
-	<include if="$(eval arg ('lidar') == 'mulran')" file="$(find fast_lio)/launch/mulran.launch">
+	<include if="$(eval arg ('lidar') == 'mulran')" file="$(find fast_lio)/../fastlio_config_launch/mulran.launch">
+		<arg name="rviz" value="false"/>
+	</include>
+	<include if="$(eval arg ('lidar') == 'newer-college2020')" file="$(find fast_lio)/../fastlio_config_launch/newer-college2020.launch">
 		<arg name="rviz" value="false"/>
 	</include>
 
