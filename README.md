@@ -62,7 +62,7 @@
     sudo apt install libtbb-dev
     ```
 
-## How to build and use
+## How to build 
 + Get the code and then build the main code.
     ```shell
     cd ~/your_workspace/src
@@ -76,12 +76,24 @@
     catkin build -DCMAKE_BUILD_TYPE=Release
     . devel/setup.bash
     ```
+
+## How to run
+
 + Then run (change config files in third_party/`FAST_LIO`)
-    ```shell
-    roslaunch fast_lio_sam_qn run.launch lidar:=ouster
-    roslaunch fast_lio_sam_qn run.launch lidar:=velodyne
-    roslaunch fast_lio_sam_qn run.launch lidar:=livox
-    ```
+ 
+```shell
+roslaunch fast_lio_sam_qn run.launch lidar:=ouster
+roslaunch fast_lio_sam_qn run.launch lidar:=velodyne
+roslaunch fast_lio_sam_qn run.launch lidar:=livox
+```
+
+* In particular, we provide a preset launch option for specific datasets:
+ 
+```shell
+roslaunch fast_lio_sam_qn run.launch lidar:=kitti
+roslaunch fast_lio_sam_qn run.launch lidar:=mulran
+roslaunch fast_lio_sam_qn run.launch lidar:=newer-college20
+```
 
 <br>
 

@@ -1,3 +1,5 @@
 .vscode/
 *.bag
 fast_lio_sam_qn/*.bag
+/fast_lio_sam_qn/result.pcd
+/fast_lio_sam_qn/sequence*/
