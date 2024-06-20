@@ -1,6 +1,5 @@
 #include "main.h"
 
-namespace fs = std::filesystem;
 
 PosePcd::PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in)
 {
@@ -113,6 +112,7 @@ FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_
   m_sub_pcd = std::make_shared<message_filters::Subscriber<sensor_msgs::PointCloud2>>(m_nh, "/cloud_registered", 10);
   m_sub_odom_pcd_sync = std::make_shared<message_filters::Synchronizer<odom_pcd_sync_pol>>(odom_pcd_sync_pol(10), *m_sub_odom, *m_sub_pcd);
   m_sub_odom_pcd_sync->registerCallback(boost::bind(&FastLioSamQnClass::odomPcdCallback, this, _1, _2));
+  m_sub_save_flag = m_nh.subscribe("/save_dir", 1, &FastLioSamQnClass::SaveFlagCallback, this);
   // Timers at the end
   m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FastLioSamQnClass::loopTimerFunc, this);
   m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FastLioSamQnClass::visTimerFunc, this);
@@ -152,41 +152,5 @@ FastLioSamQnClass::~FastLioSamQnClass()
     }
     pcl::io::savePCDFileASCII<PointType> (m_package_path+"/result.pcd", corrected_map_);
     cout << "\033[32;1mResult saved in .pcd format!!!\033[0m" << endl;
-  }
-  // save scans as individual pcd files and poses in KITTI format
-  if (m_save_in_kitti_format)
-  {
-    // Delete the scans folder if it exists and create a new one
-    std::string seq_directory = m_package_path + "/" + m_seq_name;
-    std::string scans_directory = seq_directory + "/scans";
-    std::cout << "Debug " << std::endl;
-    if (fs::exists(seq_directory))
-    {
-      fs::remove_all(seq_directory);
-    }
-    fs::create_directories(scans_directory);
-
-    std::ofstream pose_file(seq_directory + "/poses.txt");
-    std::cout << "Debug2 " << std::endl;
-    {
-      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (int i = 0; i < m_keyframes.size(); ++i)
-      {
-        std::cout << "Debug3 -> " << i << std::endl;
-        // Save the point cloud
-        std::stringstream ss;
-        ss << scans_directory << "/" << std::setw(6) << std::setfill('0') << i << ".pcd";
-        std::cout << ss.str() << std::endl;
-        pcl::io::savePCDFileASCII<PointType>(ss.str(), m_keyframes[i].pcd);
-
-        // Save the pose in KITTI format
-        const auto& pose = m_keyframes[i].pose_corrected_eig;
-        pose_file << pose(0, 0) << " " << pose(0, 1) << " " << pose(0, 2) << " " << pose(0, 3) << " "
-                  << pose(1, 0) << " " << pose(1, 1) << " " << pose(1, 2) << " " << pose(1, 3) << " "
-                  << pose(2, 0) << " " << pose(2, 1) << " " << pose(2, 2) << " " << pose(2, 3) << "\n";
-      }
-    }
-    pose_file.close();
-    cout << "\033[33;1mScans and poses saved in .pcd and KITTI format!!!\033[0m" << endl;
   }
 }

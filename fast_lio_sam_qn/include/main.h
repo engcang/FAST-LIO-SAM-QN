@@ -23,6 +23,7 @@
 #include <tf/transform_datatypes.h> // createQuaternionFromRPY
 #include <tf_conversions/tf_eigen.h> // tf <-> eigen
 #include <tf/transform_broadcaster.h> // broadcaster
+#include <std_msgs/String.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -121,10 +122,11 @@ class FastLioSamQnClass
     ros::Publisher m_realtime_pose_pub;
     ros::Publisher m_debug_src_pub, m_debug_dst_pub, m_debug_coarse_aligned_pub, m_debug_fine_aligned_pub;
     ros::Timer m_loop_timer, m_vis_timer;
-    // odom, pcd sync subscriber
+    // odom, pcd sync, and save flag subscribers
     shared_ptr<message_filters::Synchronizer<odom_pcd_sync_pol>> m_sub_odom_pcd_sync = nullptr;
     shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> m_sub_odom = nullptr;
     shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> m_sub_pcd = nullptr;
+    ros::Subscriber m_sub_save_flag;
 
     ///// functions
   public:
@@ -147,6 +149,7 @@ class FastLioSamQnClass
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
     void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
+    void SaveFlagCallback(const std_msgs::String::ConstPtr &msg);
     void loopTimerFunc(const ros::TimerEvent& event);
     void visTimerFunc(const ros::TimerEvent& event);
 };
