@@ -13,6 +13,7 @@
 #include <mutex>
 #include <string>
 #include <utility> // pair, make_pair
+#include <filesystem>
 ///// ROS
 #include <ros/ros.h>
 #include <ros/package.h> // get package_path
@@ -80,6 +81,7 @@ class FastLioSamQnClass
     ///// basic params
     std::string m_map_frame;
     std::string m_package_path;
+    std::string m_seq_name;
     ///// shared data - odom and pcd
     std::mutex m_realtime_pose_mutex, m_keyframes_mutex;
     std::mutex m_graph_mutex, m_vis_mutex;
@@ -111,7 +113,7 @@ class FastLioSamQnClass
     nav_msgs::Path m_odom_path, m_corrected_path;
     bool m_global_map_vis_switch = true;
     ///// results
-    bool m_save_map_bag = false, m_save_map_pcd = false;
+    bool m_save_map_bag = false, m_save_map_pcd = false, m_save_in_kitti_format = false;
     ///// ros
     ros::NodeHandle m_nh;
     ros::Publisher m_corrected_odom_pub, m_corrected_path_pub, m_odom_pub, m_path_pub;
