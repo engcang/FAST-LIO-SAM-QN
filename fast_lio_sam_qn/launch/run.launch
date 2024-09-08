@@ -33,5 +33,8 @@
 	<include if="$(eval arg ('lidar') == 'newer-college2020')" file="$(find fast_lio)/../fastlio_config_launch/newer-college2020.launch">
 		<arg name="rviz" value="false"/>
 	</include>
+	<include if="$(eval arg ('lidar') == 'kimera-multi')" file="$(find fast_lio)/../fastlio_config_launch/kimera-multi.launch">
+		<arg name="rviz" value="false"/>
+	</include>
 
 </launch>
