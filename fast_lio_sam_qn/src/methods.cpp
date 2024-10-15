@@ -149,31 +149,10 @@ Eigen::Matrix4d FastLioSamQnClass::coarseToFineAlignment(const pcl::PointCloud<P
   {
     // coarse align with the result of Quatro
     const pcl::PointCloud<PointType> &src_coarse_aligned_ = transformPcd(src_raw_, quatro_tf_);
-    // then match with Nano-GICP
-    pcl::PointCloud<PointType> fine_aligned_;
-    pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
-    pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
-    *dst_ = dst_raw_;
-    *src_ = src_coarse_aligned_;
-    m_nano_gicp.setInputSource(src_);
-    m_nano_gicp.calculateSourceCovariances();
-    m_nano_gicp.setInputTarget(dst_);
-    m_nano_gicp.calculateTargetCovariances();
-    m_nano_gicp.align(fine_aligned_);
-    // handle results
-    score = m_nano_gicp.getFitnessScore();
-    if(m_nano_gicp.hasConverged() && score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
-    {
-      if_converged = true;
-      Eigen::Matrix4d icp_tf_ = m_nano_gicp.getFinalTransformation().cast<double>();
-      output_tf_ = icp_tf_ * quatro_tf_; // IMPORTANT: take care of the order
-    }
-    else if_converged = false;
-    // vis for debug
-    m_debug_src_pub.publish(pclToPclRos(src_raw_, m_map_frame));
-    m_debug_dst_pub.publish(pclToPclRos(dst_raw_, m_map_frame));
+    const auto &icp_tf_ = icpAlignment(src_coarse_aligned_, dst_raw_, if_converged, score);
+    output_tf_ = icp_tf_ * quatro_tf_; // IMPORTANT: take care of the order
+
     m_debug_coarse_aligned_pub.publish(pclToPclRos(src_coarse_aligned_, m_map_frame));
-    m_debug_fine_aligned_pub.publish(pclToPclRos(fine_aligned_, m_map_frame));
   }
   return output_tf_;
 }
