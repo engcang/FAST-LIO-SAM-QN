@@ -75,6 +75,13 @@ struct PosePcd
   PosePcd(){};
   PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
 };
+
+struct RegistrationOutput
+{
+  Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
+  bool is_converged                = false;
+  double score                     = std::numeric_limits<float>::max();
+};
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class FastLioSamQnClass
 {
@@ -131,6 +138,8 @@ class FastLioSamQnClass
 
     ///// functions
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     FastLioSamQnClass(const ros::NodeHandle& n_private);
     ~FastLioSamQnClass();
   private:
@@ -140,10 +149,8 @@ class FastLioSamQnClass
     bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
     int getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes);
     std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching);
-    Eigen::Matrix4d icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_, 
-                                 bool &if_converged, double &score);
-    Eigen::Matrix4d coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_,
-                                         bool &if_converged, double &score);
+    RegistrationOutput icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
+    RegistrationOutput coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
     void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);

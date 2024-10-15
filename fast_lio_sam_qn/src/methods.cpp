@@ -111,10 +111,9 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQnC
   return {src_raw_, dst_raw_};
 }
 
-Eigen::Matrix4d FastLioSamQnClass::icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_, bool &if_converged, double &score)
+RegistrationOutput FastLioSamQnClass::icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
 {
-  Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
-  if_converged = false;
+  RegistrationOutput reg_output;
   // merge subkeyframes before ICP
   pcl::PointCloud<PointType> aligned_;
   pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
@@ -131,28 +130,32 @@ Eigen::Matrix4d FastLioSamQnClass::icpAlignment(const pcl::PointCloud<PointType>
   m_debug_dst_pub.publish(pclToPclRos(dst_raw_, m_map_frame));
   m_debug_fine_aligned_pub.publish(pclToPclRos(aligned_, m_map_frame));
   // handle results
-  score = m_nano_gicp.getFitnessScore();
-  if(m_nano_gicp.hasConverged() && score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
+  reg_output.score = m_nano_gicp.getFitnessScore();
+  if(m_nano_gicp.hasConverged() && reg_output.score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
   {
-    if_converged = true;
-    output_tf_ = m_nano_gicp.getFinalTransformation().cast<double>();
+    reg_output.is_converged = true;
+    reg_output.pose_between_eig = m_nano_gicp.getFinalTransformation().cast<double>();
   }
-  return output_tf_;
+  return reg_output;
 }
 
-Eigen::Matrix4d FastLioSamQnClass::coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_, bool &if_converged, double &score)
+RegistrationOutput FastLioSamQnClass::coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
 {
-  Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
-  Eigen::Matrix4d quatro_tf_ = m_quatro_handler->align(src_raw_, dst_raw_, if_converged);
-  if (!if_converged) return quatro_tf_;
+  RegistrationOutput reg_output;
+  reg_output.pose_between_eig = (m_quatro_handler->align(src_raw_, dst_raw_, reg_output.is_converged));
+  if (!reg_output.is_converged) return reg_output;
   else //if valid,
   {
     // coarse align with the result of Quatro
-    const pcl::PointCloud<PointType> &src_coarse_aligned_ = transformPcd(src_raw_, quatro_tf_);
-    const auto &icp_tf_ = icpAlignment(src_coarse_aligned_, dst_raw_, if_converged, score);
-    output_tf_ = icp_tf_ * quatro_tf_; // IMPORTANT: take care of the order
+    const pcl::PointCloud<PointType> &src_coarse_aligned_ = transformPcd(src_raw_, reg_output.pose_between_eig);
+    const auto &fine_output = icpAlignment(src_coarse_aligned_, dst_raw_);
+
+    const auto quatro_tf_       = reg_output.pose_between_eig;
+    reg_output.pose_between_eig = fine_output.pose_between_eig * quatro_tf_; // IMPORTANT: take care of the order
+    reg_output.is_converged     = fine_output.is_converged;
+    reg_output.score            = fine_output.score;
 
     m_debug_coarse_aligned_pub.publish(pclToPclRos(src_coarse_aligned_, m_map_frame));
   }
-  return output_tf_;
+  return reg_output;
 }
