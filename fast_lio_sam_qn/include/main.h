@@ -102,6 +102,7 @@ class FastLioSamQnClass
     pcl::VoxelGrid<PointType> m_voxelgrid, m_voxelgrid_vis;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
+    bool m_enable_submap_matching = false;
     bool m_enable_quatro = false;
     double m_icp_score_thr, m_loop_det_radi, m_loop_det_tdiff_thr;
     int m_sub_key_num;
@@ -138,14 +139,11 @@ class FastLioSamQnClass
     void voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in);
     bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
     int getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes);
-    Eigen::Matrix4d icpKeyToSubkeys(const PosePcd &front_keyframe, const int &closest_idx, 
-                                    const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
-    Eigen::Matrix4d coarseToFineKeyToKey(const PosePcd &front_keyframe, const int &closest_idx,
-                                         const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
-    Eigen::Matrix4d icpSubkeysToSubkeys(const std::deque<PosePcd> &front_keyframes, const int& not_processed_idx,
-                                        const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
-    Eigen::Matrix4d coarseToFineSubkeysToSubkeys(const std::deque<PosePcd> &front_keyframes, const int& not_processed_idx,
-                                                 const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
+    std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching);
+    Eigen::Matrix4d icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_, 
+                                 bool &if_converged, double &score);
+    Eigen::Matrix4d coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_,
+                                         bool &if_converged, double &score);
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
     void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);

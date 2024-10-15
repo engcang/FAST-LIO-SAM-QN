@@ -40,6 +40,7 @@ FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_
   /* keyframe */
   m_nh.param<double>("/keyframe/keyframe_threshold", m_keyframe_thr, 1.0);
   m_nh.param<int>("/keyframe/subkeyframes_number", m_sub_key_num, 5);
+  m_nh.param<bool>("/keyframe/enable_submap_matching", m_enable_submap_matching, false);
   /* loop */
   m_nh.param<double>("/loop/loop_detection_radius", m_loop_det_radi, 15.0);
   m_nh.param<double>("/loop/loop_detection_timediff_threshold", m_loop_det_tdiff_thr, 10.0);

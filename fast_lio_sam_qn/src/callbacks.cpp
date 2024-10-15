@@ -155,18 +155,20 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
     bool converged_well_ = false;
     double score_;
     Eigen::Matrix4d pose_between_eig_ = Eigen::Matrix4d::Identity();
+    const auto &[src_raw, dst_raw] = setSrcAndDstCloud(m_keyframes, not_proc_key_copy_.idx, closest_keyframe_idx_, m_sub_key_num, m_enable_quatro, m_enable_submap_matching);
     if (m_enable_quatro) 
     {
-      pose_between_eig_ = coarseToFineKeyToKey(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
+      ROS_INFO("\033[1;35mcoarseToFineKeyToKey\033[0m");
+      pose_between_eig_ = coarseToFineAlignment(src_raw, dst_raw, converged_well_, score_);
     }
     else
     {
-      pose_between_eig_ = icpKeyToSubkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
+      pose_between_eig_ = icpAlignment(src_raw, dst_raw, converged_well_, score_);
     }
 
-    ROS_WARN("!!!!!!!!!!!!!!!!!!!!!! score: %.3f", score_);
     if(converged_well_) // add loop factor
     {
+      ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", score_, "\033[0m");
       gtsam::Pose3 pose_from_ = poseEigToGtsamPose(pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
       gtsam::Pose3 pose_to_ = poseEigToGtsamPose(keyframes_copy_[closest_keyframe_idx_].pose_corrected_eig);
       gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
@@ -176,6 +178,10 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
       }
       m_loop_idx_pairs.push_back({not_proc_key_copy_.idx, closest_keyframe_idx_}); //for vis
       if_loop_occured_ = true;
+    }
+    else 
+    {
+      ROS_WARN("Loop closure rejected. Score: %.3f", score_);
     }
   }
   high_resolution_clock::time_point t3_ = high_resolution_clock::now();

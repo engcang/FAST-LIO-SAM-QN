@@ -63,24 +63,60 @@ int FastLioSamQnClass::getClosestKeyframeIdx(const PosePcd &front_keyframe, cons
   return closest_idx_;
 }
 
-Eigen::Matrix4d FastLioSamQnClass::icpKeyToSubkeys(const PosePcd &front_keyframe, const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score)
+std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQnClass::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching)
+{
+  pcl::PointCloud<PointType> dst_raw_, src_raw_;
+  int num_approx = keyframes[i].pcd.size() * 2 * submap_range;
+  src_raw_.reserve(num_approx);
+  dst_raw_.reserve(num_approx);
+  if (enable_submap_matching)
+  {
+    for (int i = src_idx - submap_range; i < src_idx + submap_range + 1; ++i)
+    {
+      if (i >= 0 && i < keyframes.size()-1) // if exists
+      {
+        src_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+      }
+    }
+    for (int i = dst_idx - submap_range; i < dst_idx + submap_range + 1; ++i)
+    {
+      if (i >= 0 && i < keyframes.size()-1) //if exists
+      {
+        dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+      }
+    }
+  }
+  else 
+  {
+    src_raw_ = transformPcd(keyframes[src_idx].pcd, keyframes[src_idx].pose_corrected_eig);
+    if (enable_quatro) {
+      dst_raw_ = transformPcd(keyframes[dst_idx].pcd, keyframes[dst_idx].pose_corrected_eig);
+    } 
+    else
+    {
+      // For ICP matching, 
+      // empirically scan-to-submap matching works better
+      for (int i = dst_idx - submap_range; i < dst_idx + submap_range + 1; ++i)
+      {
+        if (i >= 0 && i < keyframes.size()-1) //if exists
+        {
+          dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+        }
+      }
+    }
+  }
+  voxelizePcd(m_voxelgrid, dst_raw_);
+  voxelizePcd(m_voxelgrid, src_raw_);
+
+  return {src_raw_, dst_raw_};
+}
+
+Eigen::Matrix4d FastLioSamQnClass::icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_, bool &if_converged, double &score)
 {
   Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
   if_converged = false;
   // merge subkeyframes before ICP
-  pcl::PointCloud<PointType> dst_raw_, src_raw_, aligned_;
-  src_raw_ = transformPcd(front_keyframe.pcd, front_keyframe.pose_corrected_eig);
-  for (int i = closest_idx-m_sub_key_num; i < closest_idx+m_sub_key_num+1; ++i)
-  {
-    if (i>=0 && i < keyframes.size()-1) //if exists
-    {
-      dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
-    }
-  }
-  // voxlize pcd
-  voxelizePcd(m_voxelgrid, dst_raw_);
-  voxelizePcd(m_voxelgrid, src_raw_);
-  // then match with Nano-GICP
+  pcl::PointCloud<PointType> aligned_;
   pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
   pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
   *dst_ = dst_raw_;
@@ -104,25 +140,17 @@ Eigen::Matrix4d FastLioSamQnClass::icpKeyToSubkeys(const PosePcd &front_keyframe
   return output_tf_;
 }
 
-Eigen::Matrix4d FastLioSamQnClass::coarseToFineKeyToKey(const PosePcd &front_keyframe, const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score)
+Eigen::Matrix4d FastLioSamQnClass::coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_, bool &if_converged, double &score)
 {
   Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
-  if_converged = false;
-  // Prepare the keyframes
-  pcl::PointCloud<PointType> dst_raw_, src_raw_, src_coarse_aligned_, fine_aligned_;
-  src_raw_ = transformPcd(front_keyframe.pcd, front_keyframe.pose_corrected_eig);
-  dst_raw_ = transformPcd(keyframes[closest_idx].pcd, keyframes[closest_idx].pose_corrected_eig); //Note: Quatro should work on scan-to-scan (keyframe-to-keyframe), not keyframe-to-merged-many-keyframes
-  // voxlize pcd
-  voxelizePcd(m_voxelgrid, dst_raw_);
-  voxelizePcd(m_voxelgrid, src_raw_);
-  // then perform Quatro
   Eigen::Matrix4d quatro_tf_ = m_quatro_handler->align(src_raw_, dst_raw_, if_converged);
   if (!if_converged) return quatro_tf_;
   else //if valid,
   {
     // coarse align with the result of Quatro
-    src_coarse_aligned_ = transformPcd(src_raw_, quatro_tf_);
+    const pcl::PointCloud<PointType> &src_coarse_aligned_ = transformPcd(src_raw_, quatro_tf_);
     // then match with Nano-GICP
+    pcl::PointCloud<PointType> fine_aligned_;
     pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
     pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
     *dst_ = dst_raw_;
@@ -147,114 +175,5 @@ Eigen::Matrix4d FastLioSamQnClass::coarseToFineKeyToKey(const PosePcd &front_key
     m_debug_coarse_aligned_pub.publish(pclToPclRos(src_coarse_aligned_, m_map_frame));
     m_debug_fine_aligned_pub.publish(pclToPclRos(fine_aligned_, m_map_frame));
   }
-
-  return output_tf_;
-}
-
-Eigen::Matrix4d FastLioSamQnClass::icpSubkeysToSubkeys(const std::deque<PosePcd> &front_keyframes, const int& not_processed_idx,
-                                                      const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score)
-{
-  Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
-  if_converged = false;
-  // Prepare the keyframes
-  pcl::PointCloud<PointType> dst_raw_, src_raw_, aligned_;
-  for (int i = not_processed_idx-m_sub_key_num; i < not_processed_idx+m_sub_key_num+1; ++i)
-  {
-    if (i>=0 && i < front_keyframes.size()-1) //if exists
-    {
-      src_raw_ += transformPcd(front_keyframes[i].pcd, front_keyframes[i].pose_corrected_eig);
-    }
-  }
-  for (int i = closest_idx-m_sub_key_num; i < closest_idx+m_sub_key_num+1; ++i)
-  {
-    if (i>=0 && i < keyframes.size()-1) //if exists
-    {
-      dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
-    }
-  }
-  // Voxlize pcd
-  voxelizePcd(m_voxelgrid, dst_raw_);
-  voxelizePcd(m_voxelgrid, src_raw_);
-  // Match with Nano-GICP
-  pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
-  pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
-  *dst_ = dst_raw_;
-  *src_ = src_raw_;
-  m_nano_gicp.setInputSource(src_);
-  m_nano_gicp.calculateSourceCovariances();
-  m_nano_gicp.setInputTarget(dst_);
-  m_nano_gicp.calculateTargetCovariances();
-  m_nano_gicp.align(aligned_);
-  // vis for debug
-  m_debug_src_pub.publish(pclToPclRos(src_raw_, m_map_frame));
-  m_debug_dst_pub.publish(pclToPclRos(dst_raw_, m_map_frame));
-  m_debug_fine_aligned_pub.publish(pclToPclRos(aligned_, m_map_frame));
-  // handle results
-  score = m_nano_gicp.getFitnessScore();
-  if(m_nano_gicp.hasConverged() && score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
-  {
-    if_converged = true;
-    output_tf_ = m_nano_gicp.getFinalTransformation().cast<double>();
-  }
-  return output_tf_;  
-}
-
-Eigen::Matrix4d FastLioSamQnClass::coarseToFineSubkeysToSubkeys(const std::deque<PosePcd> &front_keyframes, const int& not_processed_idx,
-                                                                const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score)
-{
-  Eigen::Matrix4d output_tf_ = Eigen::Matrix4d::Identity();
-  if_converged = false;
-  // Prepare the keyframes
-  pcl::PointCloud<PointType> dst_raw_, src_raw_, aligned_, src_coarse_aligned_, fine_aligned_;
-  for (int i = not_processed_idx-m_sub_key_num; i < not_processed_idx+m_sub_key_num+1; ++i)
-  {
-    if (i>=0 && i < front_keyframes.size()-1) //if exists
-    {
-      src_raw_ += transformPcd(front_keyframes[i].pcd, front_keyframes[i].pose_corrected_eig);
-    }
-  }
-  for (int i = closest_idx-m_sub_key_num; i < closest_idx+m_sub_key_num+1; ++i)
-  {
-    if (i>=0 && i < keyframes.size()-1) //if exists
-    {
-      dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
-    }
-  }
-  // voxlize pcd
-  voxelizePcd(m_voxelgrid, dst_raw_);
-  voxelizePcd(m_voxelgrid, src_raw_);
-  // then perform Quatro
-  Eigen::Matrix4d quatro_tf_ = m_quatro_handler->align(src_raw_, dst_raw_, if_converged);
-  if (!if_converged) return quatro_tf_;
-  else //if valid,
-  {
-    // coarse align with the result of Quatro
-    src_coarse_aligned_ = transformPcd(src_raw_, quatro_tf_);
-    // then match with Nano-GICP
-    pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
-    pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
-    *dst_ = dst_raw_;
-    *src_ = src_coarse_aligned_;
-    m_nano_gicp.setInputSource(src_);
-    m_nano_gicp.calculateSourceCovariances();
-    m_nano_gicp.setInputTarget(dst_);
-    m_nano_gicp.calculateTargetCovariances();
-    m_nano_gicp.align(fine_aligned_);
-    // handle results
-    score = m_nano_gicp.getFitnessScore();
-    if(m_nano_gicp.hasConverged() && score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
-    {
-      if_converged = true;
-      Eigen::Matrix4d icp_tf_ = m_nano_gicp.getFinalTransformation().cast<double>();
-      output_tf_ = icp_tf_ * quatro_tf_; // IMPORTANT: take care of the order
-    }
-    else if_converged = false;
-    // vis for debug
-    m_debug_src_pub.publish(pclToPclRos(src_raw_, m_map_frame));
-    m_debug_dst_pub.publish(pclToPclRos(dst_raw_, m_map_frame));
-    m_debug_coarse_aligned_pub.publish(pclToPclRos(src_coarse_aligned_, m_map_frame));
-    m_debug_fine_aligned_pub.publish(pclToPclRos(fine_aligned_, m_map_frame));
-  }
-
   return output_tf_;
 }
