@@ -21,10 +21,10 @@ mapping:
     fov_degree:    180
     det_range:     100.0
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
-    extrinsic_T: [ -0.045630250613467524, -0.00784852988506693, -0.6084150115067585]
-    extrinsic_R: [0.9994652045891429, 0.03194161690749185, -0.00698788259543323,
-                 -0.03200263570684775, 0.9994490166874298, -0.008798074077210848,
-                  0.006703021917434096, 0.009017052443448963, 0.9999368527795895 ]
+    extrinsic_T: [0.04943289, 0.01478779, 0.60798871]
+    extrinsic_R: [ 0.99946541, -0.03200262, 0.00670301,
+                   0.03194165,  0.99944911, 0.009017,
+                   -0.0069879, -0.00879813, 0.99993691 ]
 publish:
     path_en:  true
     scan_publish_en:  true       # false: close all the point cloud output

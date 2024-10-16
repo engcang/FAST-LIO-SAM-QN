@@ -2,6 +2,8 @@
 
 	<arg name="rviz" default="true" />
 	<arg name="lidar" default="ouster" /> <!-- ouster, velodyne, livox -->
+	<arg name="odom_topic" default="/Odometry" /> 
+	<arg name="lidar_topic" default="/cloud_registered" /> 
 
 	<!-- visualize -->
 	<!-- <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz_lio" args="-d $(find fast_lio_sam_qn)/config/lio_rviz.rviz" launch-prefix="nice"/> -->
@@ -9,7 +11,10 @@
 	
 	<!-- run fast_lio_sam_qn -->
 	<rosparam command="load" file="$(find fast_lio_sam_qn)/config/config.yaml" />
-	<node pkg="fast_lio_sam_qn" type="fast_lio_sam_qn_node" name="fast_lio_sam_qn_node" output="screen"/> 
+	<node pkg="fast_lio_sam_qn" type="fast_lio_sam_qn_node" name="fast_lio_sam_qn_node" output="screen">
+    <remap from="/Odometry" to="$(arg odom_topic)"/>
+    <remap from="/cloud_registered" to="$(arg lidar_topic)"/>
+  </node>
 
 	<!-- run fast_lio -->
 	<include if="$(eval arg ('lidar') == 'ouster')" file="$(find fast_lio)/launch/mapping_ouster64.launch">
@@ -33,7 +38,13 @@
 	<include if="$(eval arg ('lidar') == 'newer-college2020')" file="$(find fast_lio)/../fastlio_config_launch/newer-college2020.launch">
 		<arg name="rviz" value="false"/>
 	</include>
-	<include if="$(eval arg ('lidar') == 'kimera-multi')" file="$(find fast_lio)/../fastlio_config_launch/kimera-multi.launch">
+	<include if="$(eval arg ('lidar') == 'kimera-multi-acl_jackal2')" file="$(find fast_lio)/../fastlio_config_launch/kimera-multi-acl_jackal2.launch">
+		<arg name="rviz" value="false"/>
+	</include>
+  <include if="$(eval arg ('lidar') == 'kimera-multi-apis')" file="$(find fast_lio)/../fastlio_config_launch/kimera-multi-apis.launch">
+		<arg name="rviz" value="false"/>
+	</include>
+	<include if="$(eval arg ('lidar') == 'vbr-colosseo')" file="$(find fast_lio)/../fastlio_config_launch/vbr-colosseo.launch">
 		<arg name="rviz" value="false"/>
 	</include>
 
