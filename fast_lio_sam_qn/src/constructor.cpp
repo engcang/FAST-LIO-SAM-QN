@@ -1,4 +1,4 @@
-#include "main.h"
+#include "fast_lio_sam_qn.h"
 
 
 PosePcd::PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in)

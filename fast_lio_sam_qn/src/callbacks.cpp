@@ -1,4 +1,4 @@
-#include "main.h"
+#include "fast_lio_sam_qn.h"
 
 namespace fs = std::filesystem;
 

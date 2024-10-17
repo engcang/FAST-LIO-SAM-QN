@@ -1,4 +1,4 @@
-#include "main.h"
+#include "fast_lio_sam_qn.h"
 
 
 void FastLioSamQn::updateVisVars(const PosePcd &pose_pcd_in)
