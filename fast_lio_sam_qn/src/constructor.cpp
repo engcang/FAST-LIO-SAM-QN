@@ -40,6 +40,7 @@ FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_
   /* keyframe */
   m_nh.param<double>("/keyframe/keyframe_threshold", m_keyframe_thr, 1.0);
   m_nh.param<int>("/keyframe/subkeyframes_number", m_sub_key_num, 5);
+  m_nh.param<bool>("/keyframe/enable_submap_matching", m_enable_submap_matching, false);
   /* loop */
   m_nh.param<double>("/loop/loop_detection_radius", m_loop_det_radi, 15.0);
   m_nh.param<double>("/loop/loop_detection_timediff_threshold", m_loop_det_tdiff_thr, 10.0);
@@ -67,6 +68,8 @@ FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_
   /* results */
   m_nh.param<bool>("/result/save_map_bag", m_save_map_bag, false);
   m_nh.param<bool>("/result/save_map_pcd", m_save_map_pcd, false);
+  m_nh.param<bool>("/result/save_in_kitti_format", m_save_in_kitti_format, false);
+  m_nh.param<std::string>("/result/seq_name", m_seq_name, "");
 
   ////// GTSAM init
   gtsam::ISAM2Params isam_params_;
@@ -110,6 +113,7 @@ FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_
   m_sub_pcd = std::make_shared<message_filters::Subscriber<sensor_msgs::PointCloud2>>(m_nh, "/cloud_registered", 10);
   m_sub_odom_pcd_sync = std::make_shared<message_filters::Synchronizer<odom_pcd_sync_pol>>(odom_pcd_sync_pol(10), *m_sub_odom, *m_sub_pcd);
   m_sub_odom_pcd_sync->registerCallback(boost::bind(&FastLioSamQnClass::odomPcdCallback, this, _1, _2));
+  m_sub_save_flag = m_nh.subscribe("/save_dir", 1, &FastLioSamQnClass::SaveFlagCallback, this);
   // Timers at the end
   m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FastLioSamQnClass::loopTimerFunc, this);
   m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FastLioSamQnClass::visTimerFunc, this);

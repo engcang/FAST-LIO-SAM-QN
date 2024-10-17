@@ -1,0 +1,50 @@
+common:
+    lid_topic:  "/acl_jackal2/lidar_points"
+    imu_topic:  "/acl_jackal2/forward/imu"
+    # imu_topic:  "/acl_jackal2/imu/data"
+    time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
+    time_offset_lidar_to_imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
+                                  # This param will take effect no matter what time_sync_en is. So if the time offset is not known exactly, please set as 0.0
+
+preprocess:
+    lidar_type: 2                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
+    scan_line: 16
+    scan_rate: 10                # only need to be set for velodyne, unit: Hz,
+    timestamp_unit: 2            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
+    blind: 0.3
+
+mapping:
+    acc_cov: 0.1
+    gyr_cov: 0.1
+    b_acc_cov: 0.01
+    b_gyr_cov: 0.005
+    fov_degree:    180
+    det_range:     100.0
+    extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
+    # When using  /acl_jackal2/forward/imu
+    extrinsic_T: [ 0.07025405, -0.10158666, -0.04942693 ]
+    extrinsic_R: [-2.9046527369e-02, -9.9957706196e-01, -1.7154151723e-03,
+                   -6.9278006858e-02, 3.7251435690e-03, -9.9759064383e-01,
+                   9.9717458733e-01, -2.8857692625e-02, -6.9356874944e-02  ]
+
+    # When using  /acl_jackal2/imu/data (raw)
+    #extrinsic_T: [0.13, 0.0, 0.52]
+    #extrinsic_R: [1.0,  0.0,  0.0,
+    #              0.0,  1.0,  0.0,
+    #              0.0,  0.0,  1.0]
+    # When using  /acl_jackal2/imu/data (tuned by Parker)
+#    extrinsic_T: [ 0.06455307, -0.08247405, 0.47198666]
+#    extrinsic_R: [ 0.99717459, -0.02885769, -0.06935687,
+#                   0.02904653,  0.99957706,  0.00171542,
+#                   0.06927801, -0.00372514,  0.99759064]
+
+publish:
+    path_en:  true
+    scan_publish_en:  true       # false: close all the point cloud output
+    dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
+    scan_bodyframe_pub_en: false  # true: output the point cloud scans in IMU-body-frame
+
+pcd_save:
+    pcd_save_en: false
+    interval: -1                 # how many LiDAR frames saved in each pcd file; 
+                                 # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.

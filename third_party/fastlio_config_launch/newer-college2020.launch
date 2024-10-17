@@ -3,10 +3,10 @@
 
     <arg name="rviz" default="true" />
 
-    <rosparam command="load" file="$(find fast_lio)/../fastlio_config_launch/mulran.yaml" />
+    <rosparam command="load" file="$(find fast_lio)/../fastlio_config_launch/newer-college2020.yaml" />
 
     <param name="feature_extract_enable" type="bool" value="0"/>
-    <param name="point_filter_num" type="int" value="3"/>
+    <param name="point_filter_num" type="int" value="4"/>
     <param name="max_iteration" type="int" value="3" />
     <param name="filter_size_surf" type="double" value="0.5" />
     <param name="filter_size_map" type="double" value="0.5" />

@@ -1,5 +1,6 @@
 #include "main.h"
 
+namespace fs = std::filesystem;
 
 void FastLioSamQnClass::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg)
 {
@@ -151,22 +152,23 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
   if (closest_keyframe_idx_ >= 0) //if exists
   {
     // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
-    bool converged_well_ = false;
-    double score_;
-    Eigen::Matrix4d pose_between_eig_ = Eigen::Matrix4d::Identity();
+    RegistrationOutput reg_output;
+    const auto &[src_raw, dst_raw] = setSrcAndDstCloud(m_keyframes, not_proc_key_copy_.idx, closest_keyframe_idx_, m_sub_key_num, m_enable_quatro, m_enable_submap_matching);
     if (m_enable_quatro) 
     {
-      pose_between_eig_ = coarseToFineKeyToKey(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
+      ROS_INFO("\033[1;35mcoarseToFineKeyToKey\033[0m");
+      reg_output = coarseToFineAlignment(src_raw, dst_raw);
     }
     else
     {
-      pose_between_eig_ = icpKeyToSubkeys(not_proc_key_copy_, closest_keyframe_idx_, keyframes_copy_, converged_well_, score_);
+      reg_output = icpAlignment(src_raw, dst_raw);
     }
 
-    ROS_WARN("!!!!!!!!!!!!!!!!!!!!!! score: %.3f", score_);
-    if(converged_well_) // add loop factor
+    if(reg_output.is_converged) // add loop factor
     {
-      gtsam::Pose3 pose_from_ = poseEigToGtsamPose(pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
+      ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score, "\033[0m");
+      const auto &score_ = reg_output.score;
+      gtsam::Pose3 pose_from_ = poseEigToGtsamPose(reg_output.pose_between_eig * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
       gtsam::Pose3 pose_to_ = poseEigToGtsamPose(keyframes_copy_[closest_keyframe_idx_].pose_corrected_eig);
       gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
       {
@@ -175,6 +177,10 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
       }
       m_loop_idx_pairs.push_back({not_proc_key_copy_.idx, closest_keyframe_idx_}); //for vis
       if_loop_occured_ = true;
+    }
+    else 
+    {
+      ROS_WARN("Loop closure rejected. Score: %.3f", reg_output.score);
     }
   }
   high_resolution_clock::time_point t3_ = high_resolution_clock::now();
@@ -259,4 +265,88 @@ void FastLioSamQnClass::visTimerFunc(const ros::TimerEvent& event)
   high_resolution_clock::time_point tv2_ = high_resolution_clock::now();
   ROS_INFO("vis: %.1fms", duration_cast<microseconds>(tv2_-tv1_).count()/1e3);
   return;
+}
+
+void FastLioSamQnClass::SaveFlagCallback(const std_msgs::String::ConstPtr& msg)
+{
+  std::string save_dir = msg->data != "" ? msg->data : m_package_path;
+
+  // save scans as individual pcd files and poses in KITTI format
+  // Delete the scans folder if it exists and create a new one
+  std::string seq_directory   = save_dir + "/" + m_seq_name;
+  std::string scans_directory = seq_directory + "/scans";
+  std::cout << "\033[32;1mScans are saved in " << scans_directory << ", following the KITTI and TUM format\033[0m" << std::endl;
+  if (fs::exists(seq_directory))
+  {
+    fs::remove_all(seq_directory);
+  }
+  fs::create_directories(scans_directory);
+
+  std::ofstream kitti_pose_file(seq_directory + "/poses_kitti.txt");
+  std::ofstream tum_pose_file(seq_directory + "/poses_tum.txt");
+  tum_pose_file << "#timestamp x y z qx qy qz qw\n";
+  {
+    std::lock_guard<std::mutex> lock(m_keyframes_mutex);
+    for (size_t i = 0; i < m_keyframes.size(); ++i)
+    {
+      // Save the point cloud
+      std::stringstream ss;
+      ss << scans_directory << "/" << std::setw(6) << std::setfill('0') << i << ".pcd";
+      std::cout << "Saving " << ss.str()  << "..." << std::endl;
+      pcl::io::savePCDFileASCII<PointType>(ss.str(), m_keyframes[i].pcd);
+
+      // Save the pose in KITTI format
+      const auto &pose = m_keyframes[i].pose_corrected_eig;
+      kitti_pose_file << pose(0, 0) << " " << pose(0, 1) << " " << pose(0, 2) << " " << pose(0, 3) << " "
+                << pose(1, 0) << " " << pose(1, 1) << " " << pose(1, 2) << " " << pose(1, 3) << " "
+                << pose(2, 0) << " " << pose(2, 1) << " " << pose(2, 2) << " " << pose(2, 3) << "\n";
+
+      const auto &lidar_optim_pose = poseEigToPoseStamped(m_keyframes[i].pose_corrected_eig);
+      tum_pose_file << std::fixed << std::setprecision(8)
+              << m_keyframes[i].timestamp << " "
+              << lidar_optim_pose.pose.position.x << " "
+              << lidar_optim_pose.pose.position.y << " "
+              << lidar_optim_pose.pose.position.z << " "
+              << lidar_optim_pose.pose.orientation.x << " "
+              << lidar_optim_pose.pose.orientation.y << " "
+              << lidar_optim_pose.pose.orientation.z << " "
+              << lidar_optim_pose.pose.orientation.w << "\n";
+    }
+  }
+  kitti_pose_file.close();
+  tum_pose_file.close();
+  std::cout << "\033[32;1mScans and poses saved in .pcd and KITTI format\033[0m" << std::endl;
+
+  if (m_save_map_bag)
+  {
+    rosbag::Bag bag_;
+    bag_.open(m_package_path+"/result.bag", rosbag::bagmode::Write);
+    {
+      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
+      for (int i = 0; i < m_keyframes.size(); ++i)
+      {
+        ros::Time time_;
+        time_.fromSec(m_keyframes[i].timestamp);
+        bag_.write("/keyframe_pcd", time_, pclToPclRos(m_keyframes[i].pcd, m_map_frame));
+        bag_.write("/keyframe_pose", time_, poseEigToPoseStamped(m_keyframes[i].pose_corrected_eig));
+      }
+    }
+    bag_.close();
+    cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << endl;
+  }
+
+  if (m_save_map_pcd)
+  {
+    pcl::PointCloud<PointType> corrected_map;
+    {
+      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
+      for (size_t i = 0; i < m_keyframes.size(); ++i)
+      {
+        corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+      }
+    }
+    voxelizePcd(m_voxelgrid, corrected_map);
+    pcl::io::savePCDFileASCII<PointType> (seq_directory + "/" + m_seq_name + "_map.pcd", corrected_map);
+    cout << "\033[32;1mAccumulated map cloud saved in .pcd format\033[0m" << endl;
+  }
 }

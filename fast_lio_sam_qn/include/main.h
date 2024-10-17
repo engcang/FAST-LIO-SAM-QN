@@ -13,6 +13,7 @@
 #include <mutex>
 #include <string>
 #include <utility> // pair, make_pair
+#include <filesystem>
 ///// ROS
 #include <ros/ros.h>
 #include <ros/package.h> // get package_path
@@ -22,6 +23,7 @@
 #include <tf/transform_datatypes.h> // createQuaternionFromRPY
 #include <tf_conversions/tf_eigen.h> // tf <-> eigen
 #include <tf/transform_broadcaster.h> // broadcaster
+#include <std_msgs/String.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -73,6 +75,13 @@ struct PosePcd
   PosePcd(){};
   PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
 };
+
+struct RegistrationOutput
+{
+  Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
+  bool is_converged                = false;
+  double score                     = std::numeric_limits<float>::max();
+};
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class FastLioSamQnClass
 {
@@ -80,6 +89,7 @@ class FastLioSamQnClass
     ///// basic params
     std::string m_map_frame;
     std::string m_package_path;
+    std::string m_seq_name;
     ///// shared data - odom and pcd
     std::mutex m_realtime_pose_mutex, m_keyframes_mutex;
     std::mutex m_graph_mutex, m_vis_mutex;
@@ -99,6 +109,7 @@ class FastLioSamQnClass
     pcl::VoxelGrid<PointType> m_voxelgrid, m_voxelgrid_vis;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
+    bool m_enable_submap_matching = false;
     bool m_enable_quatro = false;
     double m_icp_score_thr, m_loop_det_radi, m_loop_det_tdiff_thr;
     int m_sub_key_num;
@@ -111,7 +122,7 @@ class FastLioSamQnClass
     nav_msgs::Path m_odom_path, m_corrected_path;
     bool m_global_map_vis_switch = true;
     ///// results
-    bool m_save_map_bag = false, m_save_map_pcd = false;
+    bool m_save_map_bag = false, m_save_map_pcd = false, m_save_in_kitti_format = false;
     ///// ros
     ros::NodeHandle m_nh;
     ros::Publisher m_corrected_odom_pub, m_corrected_path_pub, m_odom_pub, m_path_pub;
@@ -119,13 +130,16 @@ class FastLioSamQnClass
     ros::Publisher m_realtime_pose_pub;
     ros::Publisher m_debug_src_pub, m_debug_dst_pub, m_debug_coarse_aligned_pub, m_debug_fine_aligned_pub;
     ros::Timer m_loop_timer, m_vis_timer;
-    // odom, pcd sync subscriber
+    // odom, pcd sync, and save flag subscribers
     shared_ptr<message_filters::Synchronizer<odom_pcd_sync_pol>> m_sub_odom_pcd_sync = nullptr;
     shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> m_sub_odom = nullptr;
     shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> m_sub_pcd = nullptr;
+    ros::Subscriber m_sub_save_flag;
 
     ///// functions
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     FastLioSamQnClass(const ros::NodeHandle& n_private);
     ~FastLioSamQnClass();
   private:
@@ -134,17 +148,13 @@ class FastLioSamQnClass
     void voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in);
     bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
     int getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes);
-    Eigen::Matrix4d icpKeyToSubkeys(const PosePcd &front_keyframe, const int &closest_idx, 
-                                    const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
-    Eigen::Matrix4d coarseToFineKeyToKey(const PosePcd &front_keyframe, const int &closest_idx,
-                                         const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
-    Eigen::Matrix4d icpSubkeysToSubkeys(const std::deque<PosePcd> &front_keyframes, const int& not_processed_idx,
-                                        const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
-    Eigen::Matrix4d coarseToFineSubkeysToSubkeys(const std::deque<PosePcd> &front_keyframes, const int& not_processed_idx,
-                                                 const int &closest_idx, const std::vector<PosePcd> &keyframes, bool &if_converged, double &score);
+    std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching);
+    RegistrationOutput icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
+    RegistrationOutput coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
     void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
+    void SaveFlagCallback(const std_msgs::String::ConstPtr &msg);
     void loopTimerFunc(const ros::TimerEvent& event);
     void visTimerFunc(const ros::TimerEvent& event);
 };
