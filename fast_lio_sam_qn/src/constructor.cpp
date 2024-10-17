@@ -113,7 +113,7 @@ FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_
   m_sub_pcd = std::make_shared<message_filters::Subscriber<sensor_msgs::PointCloud2>>(m_nh, "/cloud_registered", 10);
   m_sub_odom_pcd_sync = std::make_shared<message_filters::Synchronizer<odom_pcd_sync_pol>>(odom_pcd_sync_pol(10), *m_sub_odom, *m_sub_pcd);
   m_sub_odom_pcd_sync->registerCallback(boost::bind(&FastLioSamQnClass::odomPcdCallback, this, _1, _2));
-  m_sub_save_flag = m_nh.subscribe("/save_dir", 1, &FastLioSamQnClass::SaveFlagCallback, this);
+  m_sub_save_flag = m_nh.subscribe("/save_dir", 1, &FastLioSamQnClass::saveFlagCallback, this);
   // Timers at the end
   m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FastLioSamQnClass::loopTimerFunc, this);
   m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FastLioSamQnClass::visTimerFunc, this);
@@ -123,14 +123,14 @@ FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_
 
 FastLioSamQnClass::~FastLioSamQnClass()
 {
-  // save map
+  // save map in bag and pcd format
   if (m_save_map_bag)
   {
     rosbag::Bag bag_;
     bag_.open(m_package_path+"/result.bag", rosbag::bagmode::Write);
     {
       std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (int i = 0; i < m_keyframes.size(); ++i)
+      for (size_t i = 0; i < m_keyframes.size(); ++i)
       {
         ros::Time time_;
         time_.fromSec(m_keyframes[i].timestamp);
@@ -139,19 +139,20 @@ FastLioSamQnClass::~FastLioSamQnClass()
       }
     }
     bag_.close();
-    cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << endl;
+    std::cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << std::endl;
   }
   if (m_save_map_pcd)
   {
     pcl::PointCloud<PointType> corrected_map_;
     {
       std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (int i = 0; i < m_keyframes.size(); ++i)
+      for (size_t i = 0; i < m_keyframes.size(); ++i)
       {
         corrected_map_ += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
       }
     }
+    voxelizePcd(m_voxelgrid, corrected_map_);
     pcl::io::savePCDFileASCII<PointType> (m_package_path+"/result.pcd", corrected_map_);
-    cout << "\033[32;1mResult saved in .pcd format!!!\033[0m" << endl;
+    std::cout << "\033[32;1mAccumulated map cloud saved in .pcd format\033[0m" << std::endl;
   }
 }

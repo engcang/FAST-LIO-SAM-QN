@@ -72,28 +72,24 @@
     # nano_gicp, quatro first
     catkin build nano_gicp -DCMAKE_BUILD_TYPE=Release
     # Note the option!
-    catkin build quatro -DCMAKE_BUILD_TYPE=Release -DQUATRO_TBB=ON
+    catkin build quatro -DCMAKE_BUILD_TYPE=Release -DQUATRO_TBB=ON -DQUATRO_DEBUG=OFF
     catkin build -DCMAKE_BUILD_TYPE=Release
     . devel/setup.bash
     ```
 
 ## How to run
-
 + Then run (change config files in third_party/`FAST_LIO`)
- 
-```shell
-roslaunch fast_lio_sam_qn run.launch lidar:=ouster
-roslaunch fast_lio_sam_qn run.launch lidar:=velodyne
-roslaunch fast_lio_sam_qn run.launch lidar:=livox
-```
-
+    ```shell
+    roslaunch fast_lio_sam_qn run.launch lidar:=ouster
+    roslaunch fast_lio_sam_qn run.launch lidar:=velodyne
+    roslaunch fast_lio_sam_qn run.launch lidar:=livox
+    ```
 * In particular, we provide a preset launch option for specific datasets:
- 
-```shell
-roslaunch fast_lio_sam_qn run.launch lidar:=kitti
-roslaunch fast_lio_sam_qn run.launch lidar:=mulran
-roslaunch fast_lio_sam_qn run.launch lidar:=newer-college20
-```
+    ```shell
+    roslaunch fast_lio_sam_qn run.launch lidar:=kitti
+    roslaunch fast_lio_sam_qn run.launch lidar:=mulran
+    roslaunch fast_lio_sam_qn run.launch lidar:=newer-college20
+    ```
 
 <br>
 

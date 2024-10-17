@@ -1,6 +1,5 @@
 #include "main.h"
 
-namespace fs = std::filesystem;
 
 void FastLioSamQnClass::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg)
 {
@@ -44,7 +43,10 @@ void FastLioSamQnClass::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_m
       m_realtime_pose_pub.publish(current_pose_stamped_);
       tf::Transform transform_;
       transform_.setOrigin(tf::Vector3(current_pose_stamped_.pose.position.x, current_pose_stamped_.pose.position.y, current_pose_stamped_.pose.position.z));
-      transform_.setRotation(tf::Quaternion(current_pose_stamped_.pose.orientation.x, current_pose_stamped_.pose.orientation.y, current_pose_stamped_.pose.orientation.z, current_pose_stamped_.pose.orientation.w));
+      transform_.setRotation(tf::Quaternion(current_pose_stamped_.pose.orientation.x,
+                                            current_pose_stamped_.pose.orientation.y,
+                                            current_pose_stamped_.pose.orientation.z,
+                                            current_pose_stamped_.pose.orientation.w));
       m_broadcaster.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), m_map_frame, "robot"));
     }
     // pub current scan in corrected pose frame
@@ -61,7 +63,8 @@ void FastLioSamQnClass::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_m
         m_not_processed_keyframe = m_current_frame; //to check loop in another thread        
       }
       // 2-3. if so, add to graph
-      gtsam::noiseModel::Diagonal::shared_ptr odom_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 1e-4, 1e-4, 1e-4, 1e-2, 1e-2, 1e-2).finished());
+      gtsam::noiseModel::Diagonal::shared_ptr odom_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6)
+                                                                                                    << 1e-4, 1e-4, 1e-4, 1e-2, 1e-2, 1e-2).finished());
       gtsam::Pose3 pose_from_ = poseEigToGtsamPose(m_keyframes[m_current_keyframe_idx-1].pose_corrected_eig);
       gtsam::Pose3 pose_to_ = poseEigToGtsamPose(m_current_frame.pose_corrected_eig);
       {
@@ -108,7 +111,7 @@ void FastLioSamQnClass::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_m
       if (m_loop_added_flag)
       {
         std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-        for (int i = 0; i < m_corrected_esti.size(); ++i)
+        for (size_t i = 0; i < m_corrected_esti.size(); ++i)
         {
           m_keyframes[i].pose_corrected_eig = gtsamPoseToPoseEig(m_corrected_esti.at<gtsam::Pose3>(i));
         }
@@ -152,25 +155,27 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
   if (closest_keyframe_idx_ >= 0) //if exists
   {
     // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
-    RegistrationOutput reg_output;
-    const auto &[src_raw, dst_raw] = setSrcAndDstCloud(m_keyframes, not_proc_key_copy_.idx, closest_keyframe_idx_, m_sub_key_num, m_enable_quatro, m_enable_submap_matching);
+    RegistrationOutput reg_output_;
+    const auto &[src_raw_, dst_raw_] = setSrcAndDstCloud(m_keyframes, not_proc_key_copy_.idx, closest_keyframe_idx_,
+                                                         m_sub_key_num, m_enable_quatro, m_enable_submap_matching);
     if (m_enable_quatro) 
     {
       ROS_INFO("\033[1;35mcoarseToFineKeyToKey\033[0m");
-      reg_output = coarseToFineAlignment(src_raw, dst_raw);
+      reg_output_ = coarseToFineAlignment(src_raw_, dst_raw_);
     }
     else
     {
-      reg_output = icpAlignment(src_raw, dst_raw);
+      reg_output_ = icpAlignment(src_raw_, dst_raw_);
     }
 
-    if(reg_output.is_converged) // add loop factor
+    if(reg_output_.is_converged) // add loop factor
     {
-      ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score, "\033[0m");
-      const auto &score_ = reg_output.score;
-      gtsam::Pose3 pose_from_ = poseEigToGtsamPose(reg_output.pose_between_eig * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
+      ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f \033[0m", reg_output_.score);
+      const auto &score_ = reg_output_.score;
+      gtsam::Pose3 pose_from_ = poseEigToGtsamPose(reg_output_.pose_between_eig * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
       gtsam::Pose3 pose_to_ = poseEigToGtsamPose(keyframes_copy_[closest_keyframe_idx_].pose_corrected_eig);
-      gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
+      gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6)
+                                                                                                    << score_, score_, score_, score_, score_, score_).finished());
       {
         std::lock_guard<std::mutex> lock(m_graph_mutex);
         m_gtsam_graph.add(gtsam::BetweenFactor<gtsam::Pose3>(not_proc_key_copy_.idx, closest_keyframe_idx_, pose_from_.between(pose_to_), loop_noise_));
@@ -180,7 +185,7 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
     }
     else 
     {
-      ROS_WARN("Loop closure rejected. Score: %.3f", reg_output.score);
+      ROS_WARN("Loop closure rejected. Score: %.3f", reg_output_.score);
     }
   }
   high_resolution_clock::time_point t3_ = high_resolution_clock::now();
@@ -191,9 +196,7 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
     m_loop_added_flag = true;
   }
 
-  ROS_INFO("copy: %.1f, loop: %.1f", 
-          duration_cast<microseconds>(t2_-t1_).count()/1e3, duration_cast<microseconds>(t3_-t2_).count()/1e3);
-
+  ROS_INFO("copy: %.1f, loop: %.1f", duration_cast<microseconds>(t2_-t1_).count()/1e3, duration_cast<microseconds>(t3_-t2_).count()/1e3);
   return;
 }
 
@@ -214,7 +217,7 @@ void FastLioSamQnClass::visTimerFunc(const ros::TimerEvent& event)
       corrected_esti_copy_ = m_corrected_esti;
     }
     // correct pose and path
-    for (int i = 0; i < corrected_esti_copy_.size(); ++i)
+    for (size_t i = 0; i < corrected_esti_copy_.size(); ++i)
     {
       gtsam::Pose3 pose_ = corrected_esti_copy_.at<gtsam::Pose3>(i);
       corrected_odoms_.points.emplace_back(pose_.translation().x(), pose_.translation().y(), pose_.translation().z());
@@ -249,7 +252,7 @@ void FastLioSamQnClass::visTimerFunc(const ros::TimerEvent& event)
     pcl::PointCloud<PointType> corrected_map_;
     {
       std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (int i = 0; i < m_keyframes.size(); ++i)
+      for (size_t i = 0; i < m_keyframes.size(); ++i)
       {
         corrected_map_ += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
       }
@@ -267,55 +270,58 @@ void FastLioSamQnClass::visTimerFunc(const ros::TimerEvent& event)
   return;
 }
 
-void FastLioSamQnClass::SaveFlagCallback(const std_msgs::String::ConstPtr& msg)
+void FastLioSamQnClass::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
 {
-  std::string save_dir = msg->data != "" ? msg->data : m_package_path;
+  std::string save_dir_ = msg->data != "" ? msg->data : m_package_path;
 
   // save scans as individual pcd files and poses in KITTI format
   // Delete the scans folder if it exists and create a new one
-  std::string seq_directory   = save_dir + "/" + m_seq_name;
-  std::string scans_directory = seq_directory + "/scans";
-  std::cout << "\033[32;1mScans are saved in " << scans_directory << ", following the KITTI and TUM format\033[0m" << std::endl;
-  if (fs::exists(seq_directory))
+  std::string seq_directory_   = save_dir_ + "/" + m_seq_name;
+  std::string scans_directory_ = seq_directory_ + "/scans";
+  if (m_save_in_kitti_format)
   {
-    fs::remove_all(seq_directory);
-  }
-  fs::create_directories(scans_directory);
-
-  std::ofstream kitti_pose_file(seq_directory + "/poses_kitti.txt");
-  std::ofstream tum_pose_file(seq_directory + "/poses_tum.txt");
-  tum_pose_file << "#timestamp x y z qx qy qz qw\n";
-  {
-    std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-    for (size_t i = 0; i < m_keyframes.size(); ++i)
+    std::cout << "\033[32;1mScans are saved in " << scans_directory_ << ", following the KITTI and TUM format\033[0m" << std::endl;
+    if (fs::exists(seq_directory_))
     {
-      // Save the point cloud
-      std::stringstream ss;
-      ss << scans_directory << "/" << std::setw(6) << std::setfill('0') << i << ".pcd";
-      std::cout << "Saving " << ss.str()  << "..." << std::endl;
-      pcl::io::savePCDFileASCII<PointType>(ss.str(), m_keyframes[i].pcd);
-
-      // Save the pose in KITTI format
-      const auto &pose = m_keyframes[i].pose_corrected_eig;
-      kitti_pose_file << pose(0, 0) << " " << pose(0, 1) << " " << pose(0, 2) << " " << pose(0, 3) << " "
-                << pose(1, 0) << " " << pose(1, 1) << " " << pose(1, 2) << " " << pose(1, 3) << " "
-                << pose(2, 0) << " " << pose(2, 1) << " " << pose(2, 2) << " " << pose(2, 3) << "\n";
-
-      const auto &lidar_optim_pose = poseEigToPoseStamped(m_keyframes[i].pose_corrected_eig);
-      tum_pose_file << std::fixed << std::setprecision(8)
-              << m_keyframes[i].timestamp << " "
-              << lidar_optim_pose.pose.position.x << " "
-              << lidar_optim_pose.pose.position.y << " "
-              << lidar_optim_pose.pose.position.z << " "
-              << lidar_optim_pose.pose.orientation.x << " "
-              << lidar_optim_pose.pose.orientation.y << " "
-              << lidar_optim_pose.pose.orientation.z << " "
-              << lidar_optim_pose.pose.orientation.w << "\n";
+      fs::remove_all(seq_directory_);
     }
+    fs::create_directories(scans_directory_);
+
+    std::ofstream kitti_pose_file_(seq_directory_ + "/poses_kitti.txt");
+    std::ofstream tum_pose_file_(seq_directory_ + "/poses_tum.txt");
+    tum_pose_file_ << "#timestamp x y z qx qy qz qw\n";
+    {
+      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
+      for (size_t i = 0; i < m_keyframes.size(); ++i)
+      {
+        // Save the point cloud
+        std::stringstream ss_;
+        ss_ << scans_directory_ << "/" << std::setw(6) << std::setfill('0') << i << ".pcd";
+        std::cout << "Saving " << ss_.str()  << "..." << std::endl;
+        pcl::io::savePCDFileASCII<PointType>(ss_.str(), m_keyframes[i].pcd);
+
+        // Save the pose in KITTI format
+        const auto &pose_ = m_keyframes[i].pose_corrected_eig;
+        kitti_pose_file_ << pose_(0, 0) << " " << pose_(0, 1) << " " << pose_(0, 2) << " " << pose_(0, 3) << " "
+                        << pose_(1, 0) << " " << pose_(1, 1) << " " << pose_(1, 2) << " " << pose_(1, 3) << " "
+                        << pose_(2, 0) << " " << pose_(2, 1) << " " << pose_(2, 2) << " " << pose_(2, 3) << "\n";
+
+        const auto &lidar_optim_pose_ = poseEigToPoseStamped(m_keyframes[i].pose_corrected_eig);
+        tum_pose_file_ << std::fixed << std::setprecision(8)
+                      << m_keyframes[i].timestamp << " "
+                      << lidar_optim_pose_.pose.position.x << " "
+                      << lidar_optim_pose_.pose.position.y << " "
+                      << lidar_optim_pose_.pose.position.z << " "
+                      << lidar_optim_pose_.pose.orientation.x << " "
+                      << lidar_optim_pose_.pose.orientation.y << " "
+                      << lidar_optim_pose_.pose.orientation.z << " "
+                      << lidar_optim_pose_.pose.orientation.w << "\n";
+      }
+    }
+    kitti_pose_file_.close();
+    tum_pose_file_.close();
+    std::cout << "\033[32;1mScans and poses saved in .pcd and KITTI format\033[0m" << std::endl;
   }
-  kitti_pose_file.close();
-  tum_pose_file.close();
-  std::cout << "\033[32;1mScans and poses saved in .pcd and KITTI format\033[0m" << std::endl;
 
   if (m_save_map_bag)
   {
@@ -323,7 +329,7 @@ void FastLioSamQnClass::SaveFlagCallback(const std_msgs::String::ConstPtr& msg)
     bag_.open(m_package_path+"/result.bag", rosbag::bagmode::Write);
     {
       std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (int i = 0; i < m_keyframes.size(); ++i)
+      for (size_t i = 0; i < m_keyframes.size(); ++i)
       {
         ros::Time time_;
         time_.fromSec(m_keyframes[i].timestamp);
@@ -332,21 +338,29 @@ void FastLioSamQnClass::SaveFlagCallback(const std_msgs::String::ConstPtr& msg)
       }
     }
     bag_.close();
-    cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << endl;
+    std::cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << std::endl;
   }
 
   if (m_save_map_pcd)
   {
-    pcl::PointCloud<PointType> corrected_map;
+    pcl::PointCloud<PointType> corrected_map_;
     {
       std::lock_guard<std::mutex> lock(m_keyframes_mutex);
       for (size_t i = 0; i < m_keyframes.size(); ++i)
       {
-        corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+        corrected_map_ += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
       }
     }
-    voxelizePcd(m_voxelgrid, corrected_map);
-    pcl::io::savePCDFileASCII<PointType> (seq_directory + "/" + m_seq_name + "_map.pcd", corrected_map);
-    cout << "\033[32;1mAccumulated map cloud saved in .pcd format\033[0m" << endl;
+    voxelizePcd(m_voxelgrid, corrected_map_);
+    if (m_save_in_kitti_format)
+    {
+      pcl::io::savePCDFileASCII<PointType> (seq_directory_ + "/" + m_seq_name + "_map.pcd", corrected_map_);
+      std::cout << "\033[32;1mAccumulated map cloud saved in .pcd format in sequence directory\033[0m" << std::endl;
+    }
+    else
+    {
+      pcl::io::savePCDFileASCII<PointType> (m_package_path+"/result.pcd", corrected_map_);
+      std::cout << "\033[32;1mAccumulated map cloud saved in .pcd format\033[0m" << std::endl;
+    }
   }
 }

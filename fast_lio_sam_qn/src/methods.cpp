@@ -15,7 +15,7 @@ visualization_msgs::Marker FastLioSamQnClass::getLoopMarkers(const gtsam::Values
   visualization_msgs::Marker edges_; edges_.type = 5u;
   edges_.scale.x = 0.12f; edges_.header.frame_id = m_map_frame; edges_.pose.orientation.w = 1.0f;
   edges_.color.r = 1.0f; edges_.color.g = 1.0f; edges_.color.b = 1.0f; edges_.color.a = 1.0f;
-  for (int i = 0; i < m_loop_idx_pairs.size(); ++i)
+  for (size_t i = 0; i < m_loop_idx_pairs.size(); ++i)
   {
     if (m_loop_idx_pairs[i].first >= corrected_esti_in.size() || m_loop_idx_pairs[i].second >= corrected_esti_in.size()) continue;
     gtsam::Pose3 pose_ = corrected_esti_in.at<gtsam::Pose3>(m_loop_idx_pairs[i].first);
@@ -47,7 +47,7 @@ int FastLioSamQnClass::getClosestKeyframeIdx(const PosePcd &front_keyframe, cons
 {
   double shortest_distance_ = m_loop_det_radi*3.0;
   int closest_idx_ = -1;
-  for (int idx = 0; idx < keyframes.size()-1; ++idx)
+  for (size_t idx = 0; idx < keyframes.size()-1; ++idx)
   {
     //check if potential loop: close enough in distance, far enough in time
     double tmp_dist_ = (keyframes[idx].pose_corrected_eig.block<3, 1>(0, 3) - front_keyframe.pose_corrected_eig.block<3, 1>(0, 3)).norm();
@@ -63,24 +63,28 @@ int FastLioSamQnClass::getClosestKeyframeIdx(const PosePcd &front_keyframe, cons
   return closest_idx_;
 }
 
-std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQnClass::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching)
+std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQnClass::setSrcAndDstCloud(std::vector<PosePcd> keyframes,
+                                                                                                        const int src_idx, const int dst_idx,
+                                                                                                        const int submap_range,
+                                                                                                        const bool enable_quatro,
+                                                                                                        const bool enable_submap_matching)
 {
   pcl::PointCloud<PointType> dst_raw_, src_raw_;
-  int num_approx = keyframes[src_idx].pcd.size() * 2 * submap_range;
-  src_raw_.reserve(num_approx);
-  dst_raw_.reserve(num_approx);
+  int num_approx_ = keyframes[src_idx].pcd.size() * 2 * submap_range;
+  src_raw_.reserve(num_approx_);
+  dst_raw_.reserve(num_approx_);
   if (enable_submap_matching)
   {
     for (int i = src_idx - submap_range; i < src_idx + submap_range + 1; ++i)
     {
-      if (i >= 0 && i < keyframes.size()-1) // if exists
+      if (i >= 0 && i < static_cast<int>(keyframes.size())-1) // if exists
       {
         src_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
       }
     }
     for (int i = dst_idx - submap_range; i < dst_idx + submap_range + 1; ++i)
     {
-      if (i >= 0 && i < keyframes.size()-1) //if exists
+      if (i >= 0 && i < static_cast<int>(keyframes.size())-1) //if exists
       {
         dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
       }
@@ -89,16 +93,15 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQnC
   else 
   {
     src_raw_ = transformPcd(keyframes[src_idx].pcd, keyframes[src_idx].pose_corrected_eig);
-    if (enable_quatro) {
+    if (enable_quatro)
+    {
       dst_raw_ = transformPcd(keyframes[dst_idx].pcd, keyframes[dst_idx].pose_corrected_eig);
     } 
-    else
+    else //if ICP without Quatro, use submap anyway: //note: empirically scan-to-submap matching works better (from Hyungtae Lim)
     {
-      // For ICP matching, 
-      // empirically scan-to-submap matching works better
       for (int i = dst_idx - submap_range; i < dst_idx + submap_range + 1; ++i)
       {
-        if (i >= 0 && i < keyframes.size()-1) //if exists
+        if (i >= 0 && i < static_cast<int>(keyframes.size())-1) //if exists
         {
           dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
         }
@@ -113,8 +116,7 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQnC
 
 RegistrationOutput FastLioSamQnClass::icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
 {
-  RegistrationOutput reg_output;
-  // merge subkeyframes before ICP
+  RegistrationOutput reg_output_;
   pcl::PointCloud<PointType> aligned_;
   pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
   pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
@@ -130,32 +132,34 @@ RegistrationOutput FastLioSamQnClass::icpAlignment(const pcl::PointCloud<PointTy
   m_debug_dst_pub.publish(pclToPclRos(dst_raw_, m_map_frame));
   m_debug_fine_aligned_pub.publish(pclToPclRos(aligned_, m_map_frame));
   // handle results
-  reg_output.score = m_nano_gicp.getFitnessScore();
-  if(m_nano_gicp.hasConverged() && reg_output.score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
+  reg_output_.score = m_nano_gicp.getFitnessScore();
+  if(m_nano_gicp.hasConverged() && reg_output_.score < m_icp_score_thr) // if matchness score is lower than threshold, (lower is better)
   {
-    reg_output.is_converged = true;
-    reg_output.pose_between_eig = m_nano_gicp.getFinalTransformation().cast<double>();
+    reg_output_.is_converged = true;
+    reg_output_.pose_between_eig = m_nano_gicp.getFinalTransformation().cast<double>();
   }
-  return reg_output;
+  return reg_output_;
 }
 
 RegistrationOutput FastLioSamQnClass::coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
 {
-  RegistrationOutput reg_output;
-  reg_output.pose_between_eig = (m_quatro_handler->align(src_raw_, dst_raw_, reg_output.is_converged));
-  if (!reg_output.is_converged) return reg_output;
+  RegistrationOutput reg_output_;
+  reg_output_.pose_between_eig = (m_quatro_handler->align(src_raw_, dst_raw_, reg_output_.is_converged));
+  if (!reg_output_.is_converged) return reg_output_;
   else //if valid,
   {
     // coarse align with the result of Quatro
-    const pcl::PointCloud<PointType> &src_coarse_aligned_ = transformPcd(src_raw_, reg_output.pose_between_eig);
-    const auto &fine_output = icpAlignment(src_coarse_aligned_, dst_raw_);
+    const pcl::PointCloud<PointType> &src_coarse_aligned_ = transformPcd(src_raw_, reg_output_.pose_between_eig);
+    const auto &fine_output_ = icpAlignment(src_coarse_aligned_, dst_raw_);
 
-    const auto quatro_tf_       = reg_output.pose_between_eig;
-    reg_output.pose_between_eig = fine_output.pose_between_eig * quatro_tf_; // IMPORTANT: take care of the order
-    reg_output.is_converged     = fine_output.is_converged;
-    reg_output.score            = fine_output.score;
-
+    // handle results
+    const auto quatro_tf_ = reg_output_.pose_between_eig;
+    reg_output_.pose_between_eig = fine_output_.pose_between_eig * quatro_tf_; // IMPORTANT: take care of the order
+    reg_output_.is_converged = fine_output_.is_converged;
+    reg_output_.score = fine_output_.score;
+    
+    // additional vis for debug without redundancy
     m_debug_coarse_aligned_pub.publish(pclToPclRos(src_coarse_aligned_, m_map_frame));
   }
-  return reg_output;
+  return reg_output_;
 }

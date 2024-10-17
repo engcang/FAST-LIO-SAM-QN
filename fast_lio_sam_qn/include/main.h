@@ -13,7 +13,10 @@
 #include <mutex>
 #include <string>
 #include <utility> // pair, make_pair
+#include <tuple>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 ///// ROS
 #include <ros/ros.h>
 #include <ros/package.h> // get package_path
@@ -59,6 +62,7 @@
 #include <gtsam/nonlinear/ISAM2.h>
 
 using namespace std::chrono;
+namespace fs = std::filesystem;
 using PointType = pcl::PointXYZI;
 typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> odom_pcd_sync_pol;
 
@@ -79,8 +83,8 @@ struct PosePcd
 struct RegistrationOutput
 {
   Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
-  bool is_converged                = false;
-  double score                     = std::numeric_limits<float>::max();
+  bool is_converged = false;
+  double score = std::numeric_limits<double>::max();
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class FastLioSamQnClass
@@ -113,7 +117,7 @@ class FastLioSamQnClass
     bool m_enable_quatro = false;
     double m_icp_score_thr, m_loop_det_radi, m_loop_det_tdiff_thr;
     int m_sub_key_num;
-    std::vector<pair<int, int>> m_loop_idx_pairs; //for vis
+    std::vector<std::pair<size_t, size_t>> m_loop_idx_pairs; //for vis
     bool m_loop_added_flag = false; //for opt
     bool m_loop_added_flag_vis = false; //for vis
     ///// visualize
@@ -138,7 +142,7 @@ class FastLioSamQnClass
 
     ///// functions
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW //note for Eigen alignment, this might not be necessary from C++17
 
     FastLioSamQnClass(const ros::NodeHandle& n_private);
     ~FastLioSamQnClass();
@@ -148,13 +152,17 @@ class FastLioSamQnClass
     void voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in);
     bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
     int getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes);
-    std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching);
+    std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes,
+                                                                                         const int src_idx, const int dst_idx,
+                                                                                         const int submap_range,
+                                                                                         const bool enable_quatro,
+                                                                                         const bool enable_submap_matching);
     RegistrationOutput icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
     RegistrationOutput coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
     void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
-    void SaveFlagCallback(const std_msgs::String::ConstPtr &msg);
+    void saveFlagCallback(const std_msgs::String::ConstPtr &msg);
     void loopTimerFunc(const ros::TimerEvent& event);
     void visTimerFunc(const ros::TimerEvent& event);
 };
