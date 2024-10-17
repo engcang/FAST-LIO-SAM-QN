@@ -2,7 +2,7 @@
 
 namespace fs = std::filesystem;
 
-void FastLioSamQnClass::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg)
+void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg)
 {
   Eigen::Matrix4d last_odom_tf_;
   last_odom_tf_ = m_current_frame.pose_eig; //to calculate delta
@@ -125,7 +125,7 @@ void FastLioSamQnClass::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_m
   return;
 }
 
-void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
+void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
 {
   if (!m_init) return;
 
@@ -197,7 +197,7 @@ void FastLioSamQnClass::loopTimerFunc(const ros::TimerEvent& event)
   return;
 }
 
-void FastLioSamQnClass::visTimerFunc(const ros::TimerEvent& event)
+void FastLioSamQn::visTimerFunc(const ros::TimerEvent& event)
 {
   if (!m_init) return;
 
@@ -267,7 +267,7 @@ void FastLioSamQnClass::visTimerFunc(const ros::TimerEvent& event)
   return;
 }
 
-void FastLioSamQnClass::SaveFlagCallback(const std_msgs::String::ConstPtr& msg)
+void FastLioSamQn::SaveFlagCallback(const std_msgs::String::ConstPtr& msg)
 {
   std::string save_dir = msg->data != "" ? msg->data : m_package_path;
 

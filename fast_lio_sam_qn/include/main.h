@@ -83,7 +83,7 @@ struct RegistrationOutput
   double score                     = std::numeric_limits<float>::max();
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-class FastLioSamQnClass
+class FastLioSamQn
 {
   private:
     ///// basic params
@@ -140,8 +140,8 @@ class FastLioSamQnClass
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    FastLioSamQnClass(const ros::NodeHandle& n_private);
-    ~FastLioSamQnClass();
+    FastLioSamQn(const ros::NodeHandle& n_private);
+    ~FastLioSamQn();
   private:
     //methods
     void updateVisVars(const PosePcd &pose_pcd_in);

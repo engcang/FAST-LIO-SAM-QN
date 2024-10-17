@@ -1,7 +1,7 @@
 #include "main.h"
 
 
-void FastLioSamQnClass::updateVisVars(const PosePcd &pose_pcd_in)
+void FastLioSamQn::updateVisVars(const PosePcd &pose_pcd_in)
 {
   m_odoms.points.emplace_back(pose_pcd_in.pose_eig(0, 3), pose_pcd_in.pose_eig(1, 3), pose_pcd_in.pose_eig(2, 3));
   m_corrected_odoms.points.emplace_back(pose_pcd_in.pose_corrected_eig(0, 3), pose_pcd_in.pose_corrected_eig(1, 3), pose_pcd_in.pose_corrected_eig(2, 3));
@@ -10,7 +10,7 @@ void FastLioSamQnClass::updateVisVars(const PosePcd &pose_pcd_in)
   return;
 }
 
-visualization_msgs::Marker FastLioSamQnClass::getLoopMarkers(const gtsam::Values &corrected_esti_in)
+visualization_msgs::Marker FastLioSamQn::getLoopMarkers(const gtsam::Values &corrected_esti_in)
 {
   visualization_msgs::Marker edges_; edges_.type = 5u;
   edges_.scale.x = 0.12f; edges_.header.frame_id = m_map_frame; edges_.pose.orientation.w = 1.0f;
@@ -29,7 +29,7 @@ visualization_msgs::Marker FastLioSamQnClass::getLoopMarkers(const gtsam::Values
   return edges_;
 }
 
-void FastLioSamQnClass::voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in)
+void FastLioSamQn::voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in)
 {
   pcl::PointCloud<PointType>::Ptr before_(new pcl::PointCloud<PointType>);
   *before_ = pcd_in;
@@ -38,12 +38,12 @@ void FastLioSamQnClass::voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::P
   return;
 }
 
-bool FastLioSamQnClass::checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd)
+bool FastLioSamQn::checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd)
 {
   return m_keyframe_thr < (latest_pose_pcd.pose_corrected_eig.block<3, 1>(0, 3) - pose_pcd_in.pose_corrected_eig.block<3, 1>(0, 3)).norm();
 }
 
-int FastLioSamQnClass::getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes)
+int FastLioSamQn::getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes)
 {
   double shortest_distance_ = m_loop_det_radi*3.0;
   int closest_idx_ = -1;
@@ -63,7 +63,7 @@ int FastLioSamQnClass::getClosestKeyframeIdx(const PosePcd &front_keyframe, cons
   return closest_idx_;
 }
 
-std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQnClass::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching)
+std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQn::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching)
 {
   pcl::PointCloud<PointType> dst_raw_, src_raw_;
   int num_approx = keyframes[src_idx].pcd.size() * 2 * submap_range;
@@ -111,7 +111,7 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> FastLioSamQnC
   return {src_raw_, dst_raw_};
 }
 
-RegistrationOutput FastLioSamQnClass::icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
+RegistrationOutput FastLioSamQn::icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
 {
   RegistrationOutput reg_output;
   // merge subkeyframes before ICP
@@ -139,7 +139,7 @@ RegistrationOutput FastLioSamQnClass::icpAlignment(const pcl::PointCloud<PointTy
   return reg_output;
 }
 
-RegistrationOutput FastLioSamQnClass::coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
+RegistrationOutput FastLioSamQn::coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
 {
   RegistrationOutput reg_output;
   reg_output.pose_between_eig = (m_quatro_handler->align(src_raw_, dst_raw_, reg_output.is_converged));

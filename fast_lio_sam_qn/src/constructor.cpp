@@ -19,7 +19,7 @@ PosePcd::PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointClou
   idx = idx_in;
 }
 
-FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_private)
+FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : m_nh(n_private)
 {
   ////// ROS params
   // temp vars, only used in constructor
@@ -112,16 +112,16 @@ FastLioSamQnClass::FastLioSamQnClass(const ros::NodeHandle& n_private) : m_nh(n_
   m_sub_odom = std::make_shared<message_filters::Subscriber<nav_msgs::Odometry>>(m_nh, "/Odometry", 10);
   m_sub_pcd = std::make_shared<message_filters::Subscriber<sensor_msgs::PointCloud2>>(m_nh, "/cloud_registered", 10);
   m_sub_odom_pcd_sync = std::make_shared<message_filters::Synchronizer<odom_pcd_sync_pol>>(odom_pcd_sync_pol(10), *m_sub_odom, *m_sub_pcd);
-  m_sub_odom_pcd_sync->registerCallback(boost::bind(&FastLioSamQnClass::odomPcdCallback, this, _1, _2));
-  m_sub_save_flag = m_nh.subscribe("/save_dir", 1, &FastLioSamQnClass::SaveFlagCallback, this);
+  m_sub_odom_pcd_sync->registerCallback(boost::bind(&FastLioSamQn::odomPcdCallback, this, _1, _2));
+  m_sub_save_flag = m_nh.subscribe("/save_dir", 1, &FastLioSamQn::SaveFlagCallback, this);
   // Timers at the end
-  m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FastLioSamQnClass::loopTimerFunc, this);
-  m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FastLioSamQnClass::visTimerFunc, this);
+  m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FastLioSamQn::loopTimerFunc, this);
+  m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FastLioSamQn::visTimerFunc, this);
   
   ROS_WARN("Main class, starting node...");
 }
 
-FastLioSamQnClass::~FastLioSamQnClass()
+FastLioSamQn::~FastLioSamQn()
 {
   // save map
   if (m_save_map_bag)
