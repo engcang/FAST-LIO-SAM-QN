@@ -40,6 +40,8 @@
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/ISAM2.h>
 
+#include "loop_closure.h"
+
 using namespace std::chrono;
 typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> odom_pcd_sync_pol;
 
@@ -67,11 +69,6 @@ class FastLioSamQn
     gtsam::Values m_corrected_esti;
     double m_keyframe_thr;
     ///// loop
-    nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
-    shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
-    bool m_enable_submap_matching = false;
-    bool m_enable_quatro = false;
-    double m_icp_score_thr, m_loop_det_radi, m_loop_det_tdiff_thr;
     
     double m_voxel_res;
     int m_sub_key_num;
@@ -98,6 +95,8 @@ class FastLioSamQn
     shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> m_sub_pcd = nullptr;
     ros::Subscriber m_sub_save_flag;
 
+    LoopClosureConfig lc_config_;
+    std::unique_ptr<LoopClosure> loop_closure_;
     ///// functions
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -109,9 +108,6 @@ class FastLioSamQn
     void updateVisVars(const PosePcd &pose_pcd_in);
     bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
     int getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes);
-    std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching);
-    RegistrationOutput icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
-    RegistrationOutput coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
     void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
@@ -119,7 +115,6 @@ class FastLioSamQn
     void loopTimerFunc(const ros::TimerEvent& event);
     void visTimerFunc(const ros::TimerEvent& event);
 };
-
 
 
 #endif

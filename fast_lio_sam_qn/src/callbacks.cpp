@@ -153,15 +153,16 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
   {
     // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
     RegistrationOutput reg_output;
-    const auto &[src_raw, dst_raw] = setSrcAndDstCloud(m_keyframes, not_proc_key_copy_.idx, closest_keyframe_idx_, m_sub_key_num, m_enable_quatro, m_enable_submap_matching);
-    if (m_enable_quatro) 
+    const auto &[src_raw, dst_raw] = loop_closure_->setSrcAndDstCloud(m_keyframes, not_proc_key_copy_.idx, closest_keyframe_idx_, m_sub_key_num, lc_config_.voxel_res_, lc_config_.enable_quatro_, lc_config_.enable_submap_matching_);
+    if (lc_config_.enable_quatro_) 
     {
-      ROS_INFO("\033[1;35mcoarseToFineKeyToKey\033[0m");
-      reg_output = coarseToFineAlignment(src_raw, dst_raw);
+      ROS_INFO("\032[1;mExecute coarse-to-fine alignment\033[0m");
+      reg_output = loop_closure_->coarseToFineAlignment(src_raw, dst_raw);
     }
     else
     {
-      reg_output = icpAlignment(src_raw, dst_raw);
+      ROS_INFO("\036[1;35mExecute GICP\033[0m");
+      reg_output = loop_closure_->icpAlignment(src_raw, dst_raw);
     }
 
     if(reg_output.is_converged) // add loop factor

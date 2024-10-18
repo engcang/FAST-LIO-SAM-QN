@@ -63,7 +63,7 @@ include_directories(
 ###########
 ### main
 set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} ${OpenMP_LIBS} gtsam)
-add_library(${PROJECT_NAME}_constructor src/constructor.cpp)
+add_library(${PROJECT_NAME}_constructor src/constructor.cpp src/loop_closure.cpp)
 target_link_libraries(${PROJECT_NAME}_constructor ${COMMON_LIBS})
 add_library(${PROJECT_NAME}_methods src/methods.cpp)
 target_link_libraries(${PROJECT_NAME}_methods ${COMMON_LIBS})

@@ -24,71 +24,60 @@ FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : m_nh(n_private)
   ////// ROS params
   // temp vars, only used in constructor
   double loop_update_hz_, vis_hz_;
-  double quatro_gicp_vox_res_;
-  int nano_thread_number_, nano_correspondences_number_, nano_max_iter_;
-  int nano_ransac_max_iter_, quatro_max_iter_, quatro_max_corres_;
-  double transformation_epsilon_, euclidean_fitness_epsilon_, ransac_outlier_rejection_threshold_;
-  double fpfh_normal_radius_, fpfh_radius_, noise_bound_, rot_gnc_factor_, rot_cost_diff_thr_;
-  double quatro_distance_threshold_;
-  bool estimat_scale_, use_optimized_matching_;
+
+  auto & gc = lc_config_.gicp_config_;
+  auto & qc = lc_config_.quatro_config_;
   // get params
   /* basic */
   m_nh.param<std::string>("/basic/map_frame", m_map_frame, "map");
   m_nh.param<double>("/basic/loop_update_hz", loop_update_hz_, 1.0);
   m_nh.param<double>("/basic/vis_hz", vis_hz_, 0.5);
-  m_nh.param<double>("/quatro_nano_gicp_voxel_resolution", quatro_gicp_vox_res_, 0.3);
+  m_nh.param<double>("/save_voxel_resolution", m_voxel_res, 0.3);
+  m_nh.param<double>("/quatro_nano_gicp_voxel_resolution", lc_config_.voxel_res_, 0.3);
   /* keyframe */
   m_nh.param<double>("/keyframe/keyframe_threshold", m_keyframe_thr, 1.0);
   m_nh.param<int>("/keyframe/subkeyframes_number", m_sub_key_num, 5);
-  m_nh.param<bool>("/keyframe/enable_submap_matching", m_enable_submap_matching, false);
+  m_nh.param<bool>("/keyframe/enable_submap_matching", lc_config_.enable_submap_matching_, false);
+  
   /* loop */
-  m_nh.param<double>("/loop/loop_detection_radius", m_loop_det_radi, 15.0);
-  m_nh.param<double>("/loop/loop_detection_timediff_threshold", m_loop_det_tdiff_thr, 10.0);
-  /* nano */
-  m_nh.param<int>("/nano_gicp/thread_number", nano_thread_number_, 0);
-  m_nh.param<double>("/nano_gicp/icp_score_threshold", m_icp_score_thr, 10.0);
-  m_nh.param<int>("/nano_gicp/correspondences_number", nano_correspondences_number_, 15);
-  m_nh.param<int>("/nano_gicp/max_iter", nano_max_iter_, 32);
-  m_nh.param<double>("/nano_gicp/transformation_epsilon", transformation_epsilon_, 0.01);
-  m_nh.param<double>("/nano_gicp/euclidean_fitness_epsilon", euclidean_fitness_epsilon_, 0.01);
-  m_nh.param<int>("/nano_gicp/ransac/max_iter", nano_ransac_max_iter_, 5);
-  m_nh.param<double>("/nano_gicp/ransac/outlier_rejection_threshold", ransac_outlier_rejection_threshold_, 1.0);
-  /* quatro */
-  m_nh.param<bool>("/quatro/enable", m_enable_quatro, false);
-  m_nh.param<bool>("/quatro/optimize_matching", use_optimized_matching_, true);
-  m_nh.param<double>("/quatro/distance_threshold", quatro_distance_threshold_, 30.0);
-  m_nh.param<int>("/quatro/max_correspondences", quatro_max_corres_, 200);
-  m_nh.param<double>("/quatro/fpfh_normal_radius", fpfh_normal_radius_, 0.02);
-  m_nh.param<double>("/quatro/fpfh_radius", fpfh_radius_, 0.04);
-  m_nh.param<bool>("/quatro/estimating_scale", estimat_scale_, false);
-  m_nh.param<double>("/quatro/noise_bound", noise_bound_, 0.25);
-  m_nh.param<double>("/quatro/rotation/gnc_factor", rot_gnc_factor_, 0.25);
-  m_nh.param<double>("/quatro/rotation/rot_cost_diff_threshold", rot_cost_diff_thr_, 0.25);
-  m_nh.param<int>("/quatro/rotation/num_max_iter", quatro_max_iter_, 50);
+  m_nh.param<double>("/loop/loop_detection_radius", lc_config_.loop_detection_radius_, 15.0);
+  m_nh.param<double>("/loop/loop_detection_timediff_threshold", lc_config_.loop_detection_timediff_threshold_, 10.0);
+
+  /* nano (GICP config) */
+  m_nh.param<int>("/nano_gicp/thread_number", gc.nano_thread_number_, 0);
+  m_nh.param<double>("/nano_gicp/icp_score_threshold", gc.icp_score_thr_, 10.0);
+  m_nh.param<int>("/nano_gicp/correspondences_number", gc.nano_correspondences_number_, 15);
+  m_nh.param<int>("/nano_gicp/max_iter", gc.nano_max_iter_, 32);
+  m_nh.param<double>("/nano_gicp/transformation_epsilon", gc.transformation_epsilon_, 0.01);
+  m_nh.param<double>("/nano_gicp/euclidean_fitness_epsilon", gc.euclidean_fitness_epsilon_, 0.01);
+  m_nh.param<int>("/nano_gicp/ransac/max_iter", gc.nano_ransac_max_iter_, 5);
+  m_nh.param<double>("/nano_gicp/ransac/outlier_rejection_threshold", gc.ransac_outlier_rejection_threshold_, 1.0);
+
+  /* quatro (Quatro config) */
+  m_nh.param<bool>("/quatro/enable", lc_config_.enable_quatro_, false);
+  m_nh.param<bool>("/quatro/optimize_matching", qc.use_optimized_matching_, true);
+  m_nh.param<double>("/quatro/distance_threshold", qc.quatro_distance_threshold_, 30.0);
+  m_nh.param<int>("/quatro/max_num_correspondences", qc.quatro_max_num_corres_, 200);
+  m_nh.param<double>("/quatro/fpfh_normal_radius", qc.fpfh_normal_radius_, 0.3);
+  m_nh.param<double>("/quatro/fpfh_radius", qc.fpfh_radius_, 0.5);
+  m_nh.param<bool>("/quatro/estimating_scale", qc.estimat_scale_, false);
+  m_nh.param<double>("/quatro/noise_bound", qc.noise_bound_, 0.3);
+  m_nh.param<double>("/quatro/rotation/gnc_factor", qc.rot_gnc_factor_, 1.4);
+  m_nh.param<double>("/quatro/rotation/rot_cost_diff_threshold", qc.rot_cost_diff_thr_, 0.0001);
+  m_nh.param<int>("/quatro/rotation/num_max_iter", qc.quatro_max_iter_, 50);
+  
   /* results */
   m_nh.param<bool>("/result/save_map_bag", m_save_map_bag, false);
   m_nh.param<bool>("/result/save_map_pcd", m_save_map_pcd, false);
   m_nh.param<bool>("/result/save_in_kitti_format", m_save_in_kitti_format, false);
   m_nh.param<std::string>("/result/seq_name", m_seq_name, "");
 
+  loop_closure_.reset(new LoopClosure(lc_config_));
   ////// GTSAM init
   gtsam::ISAM2Params isam_params_;
   isam_params_.relinearizeThreshold = 0.01;
   isam_params_.relinearizeSkip = 1;
   m_isam_handler = std::make_shared<gtsam::ISAM2>(isam_params_);
-  ////// loop init
-  ////// nano_gicp init
-  m_nano_gicp.setMaxCorrespondenceDistance(m_loop_det_radi*2.0);
-  m_nano_gicp.setNumThreads(nano_thread_number_);
-  m_nano_gicp.setCorrespondenceRandomness(nano_correspondences_number_);
-  m_nano_gicp.setMaximumIterations(nano_max_iter_);
-  m_nano_gicp.setTransformationEpsilon(transformation_epsilon_);
-  m_nano_gicp.setEuclideanFitnessEpsilon(euclidean_fitness_epsilon_);
-  m_nano_gicp.setRANSACIterations(nano_ransac_max_iter_);
-  m_nano_gicp.setRANSACOutlierRejectionThreshold(ransac_outlier_rejection_threshold_);
-  ////// quatro init
-  m_quatro_handler = std::make_shared<quatro<PointType>>(fpfh_normal_radius_, fpfh_radius_, noise_bound_, rot_gnc_factor_, rot_cost_diff_thr_,
-                                                        quatro_max_iter_, estimat_scale_, use_optimized_matching_, quatro_distance_threshold_, quatro_max_corres_);
 
   ////// ROS things
   m_odom_path.header.frame_id = m_map_frame;
@@ -116,7 +105,7 @@ FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : m_nh(n_private)
   // Timers at the end
   m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FastLioSamQn::loopTimerFunc, this);
   m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FastLioSamQn::visTimerFunc, this);
-  
+
   ROS_WARN("Main class, starting node...");
 }
 
