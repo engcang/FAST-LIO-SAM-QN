@@ -254,56 +254,38 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
 
   //// 2. detect loop and add to graph
   high_resolution_clock::time_point t2_ = high_resolution_clock::now();
-  bool if_loop_occured_ = false;
-  // from not_proc_key_copy_ keyframe to old keyframes in threshold radius, get the closest keyframe
-  int closest_keyframe_idx_ = loop_closure_->fetchClosestKeyframeIdx(not_proc_key_copy_, keyframes_copy_);
-  if (closest_keyframe_idx_ >= 0) //if exists
+  const RegistrationOutput &reg_output = loop_closure_->retrieveLoopClosureMeasurement(not_proc_key_copy_, keyframes_copy_);
+  const int closest_keyframe_idx = loop_closure_->getClosestKeyframeidx();
+
+  if (closest_keyframe_idx < 0) return;
+
+  if (reg_output.is_valid)
   {
-    // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
-    RegistrationOutput reg_output;
-    const auto &[src_raw, dst_raw] = loop_closure_->setSrcAndDstCloud(m_keyframes, not_proc_key_copy_.idx, closest_keyframe_idx_, m_sub_key_num, lc_config_.voxel_res_, lc_config_.enable_quatro_, lc_config_.enable_submap_matching_);
-    if (lc_config_.enable_quatro_) 
+    ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score, "\033[0m");
+    const auto &score_ = reg_output.score;
+    gtsam::Pose3 pose_from_ = poseEigToGtsamPose(reg_output.pose_between_eig * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
+    gtsam::Pose3 pose_to_ = poseEigToGtsamPose(keyframes_copy_[closest_keyframe_idx].pose_corrected_eig);
+    gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
     {
-      ROS_INFO("\032[1;mExecute coarse-to-fine alignment\033[0m");
-      reg_output = loop_closure_->coarseToFineAlignment(src_raw, dst_raw);
+      std::lock_guard<std::mutex> lock(m_graph_mutex);
+      m_gtsam_graph.add(gtsam::BetweenFactor<gtsam::Pose3>(not_proc_key_copy_.idx, closest_keyframe_idx, pose_from_.between(pose_to_), loop_noise_));
     }
-    else
-    {
-      ROS_INFO("\036[1;35mExecute GICP\033[0m");
-      reg_output = loop_closure_->icpAlignment(src_raw, dst_raw);
-    }
-    m_debug_src_pub.publish(pclToPclRos(src_raw, m_map_frame));
-    m_debug_dst_pub.publish(pclToPclRos(dst_raw, m_map_frame));
-    m_debug_fine_aligned_pub.publish(pclToPclRos(loop_closure_->getFinalAlignedCloud(), m_map_frame));
-    m_debug_coarse_aligned_pub.publish(pclToPclRos(loop_closure_->getCoarseAlignedCloud(), m_map_frame));
+    m_loop_idx_pairs.push_back({not_proc_key_copy_.idx, closest_keyframe_idx}); //for vis
 
-
-    if(reg_output.is_converged) // add loop factor
-    {
-      ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score, "\033[0m");
-      const auto &score_ = reg_output.score;
-      gtsam::Pose3 pose_from_ = poseEigToGtsamPose(reg_output.pose_between_eig * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
-      gtsam::Pose3 pose_to_ = poseEigToGtsamPose(keyframes_copy_[closest_keyframe_idx_].pose_corrected_eig);
-      gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
-      {
-        std::lock_guard<std::mutex> lock(m_graph_mutex);
-        m_gtsam_graph.add(gtsam::BetweenFactor<gtsam::Pose3>(not_proc_key_copy_.idx, closest_keyframe_idx_, pose_from_.between(pose_to_), loop_noise_));
-      }
-      m_loop_idx_pairs.push_back({not_proc_key_copy_.idx, closest_keyframe_idx_}); //for vis
-      if_loop_occured_ = true;
-    }
-    else 
-    {
-      ROS_WARN("Loop closure rejected. Score: %.3f", reg_output.score);
-    }
-  }
-  high_resolution_clock::time_point t3_ = high_resolution_clock::now();
-
-  if (if_loop_occured_)
-  {
     m_loop_added_flag_vis = true;
     m_loop_added_flag = true;
   }
+  else 
+  { 
+      ROS_WARN("Loop closure rejected. Score: %.3f", reg_output.score);
+  }
+  
+  high_resolution_clock::time_point t3_ = high_resolution_clock::now();
+
+  m_debug_src_pub.publish(pclToPclRos(loop_closure_->getSourceCloud(), m_map_frame));
+  m_debug_dst_pub.publish(pclToPclRos(loop_closure_->getTargetCloud(), m_map_frame));
+  m_debug_fine_aligned_pub.publish(pclToPclRos(loop_closure_->getFinalAlignedCloud(), m_map_frame));
+  m_debug_coarse_aligned_pub.publish(pclToPclRos(loop_closure_->getCoarseAlignedCloud(), m_map_frame));
 
   ROS_INFO("copy: %.1f, loop: %.1f", 
           duration_cast<microseconds>(t2_-t1_).count()/1e3, duration_cast<microseconds>(t3_-t2_).count()/1e3);

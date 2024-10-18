@@ -52,9 +52,10 @@ struct PosePcd
 
 struct RegistrationOutput
 {
-  Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
+  bool is_valid                    = false;
   bool is_converged                = false;
   double score                     = std::numeric_limits<float>::max();
+  Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
 };
 
 inline pcl::PointCloud<PointType>::Ptr voxelizePcd(const pcl::PointCloud<PointType> &pcd_in, const float voxel_res)

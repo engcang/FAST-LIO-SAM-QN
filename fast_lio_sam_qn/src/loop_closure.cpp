@@ -135,6 +135,47 @@ RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<Poin
   return reg_output;
 }
 
+RegistrationOutput LoopClosure::retrieveLoopClosureMeasurement(const PosePcd &query_keyframe, const std::vector<PosePcd> &keyframes) 
+{
+  RegistrationOutput reg_output;
+  closest_keyframe_idx_ = fetchClosestKeyframeIdx(query_keyframe, keyframes);
+  if (closest_keyframe_idx_ >= 0) 
+  {
+    // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
+    const auto &[src_cloud, dst_cloud] = setSrcAndDstCloud(keyframes, query_keyframe.idx, closest_keyframe_idx_,
+                                                                      config_.num_submap_keyframes_, config_.voxel_res_,
+                                                                      config_.enable_quatro_, config_.enable_submap_matching_);
+    // Only for visualization
+    *src_cloud_ = src_cloud;
+    *dst_cloud_ = dst_cloud;
+
+    if (config_.enable_quatro_) 
+    {
+      std::cout << "\033[1;35mExecute coarse-to-fine alignment: "  << src_cloud.size() << " vs " << dst_cloud.size() << "\033[0m\n";
+      return coarseToFineAlignment(src_cloud, dst_cloud);
+    }
+    else
+    {
+      std::cout << "\033[1;35mExecute GICP: "  << src_cloud.size() << " vs " << dst_cloud.size() << "\033[0m\n";
+      return icpAlignment(src_cloud, dst_cloud);
+    }
+  } 
+  else
+  {
+    return reg_output; // dummy output whose `is_valid` is false
+  }
+}
+
+pcl::PointCloud<PointType> LoopClosure::getSourceCloud()
+{
+  return *src_cloud_;
+}
+
+pcl::PointCloud<PointType> LoopClosure::getTargetCloud()
+{
+  return *dst_cloud_;
+}
+
 pcl::PointCloud<PointType> LoopClosure::getCoarseAlignedCloud()
 {
   return coarse_aligned_;
@@ -144,5 +185,10 @@ pcl::PointCloud<PointType> LoopClosure::getCoarseAlignedCloud()
 pcl::PointCloud<PointType> LoopClosure::getFinalAlignedCloud()
 {
   return aligned_;
+}
+
+int LoopClosure::getClosestKeyframeidx()
+{
+  return closest_keyframe_idx_;
 }
 

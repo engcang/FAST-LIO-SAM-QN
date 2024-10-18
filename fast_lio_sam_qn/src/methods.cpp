@@ -34,24 +34,4 @@ bool FastLioSamQn::checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &la
   return m_keyframe_thr < (latest_pose_pcd.pose_corrected_eig.block<3, 1>(0, 3) - pose_pcd_in.pose_corrected_eig.block<3, 1>(0, 3)).norm();
 }
 
-int FastLioSamQn::getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes)
-{
-  const auto &m_loop_det_radi = lc_config_.loop_detection_radius_;
-  const auto &m_loop_det_tdiff_thr = lc_config_.loop_detection_timediff_threshold_;
-  double shortest_distance_ = m_loop_det_radi*3.0;
-  int closest_idx_ = -1;
-  for (int idx = 0; idx < keyframes.size()-1; ++idx)
-  {
-    //check if potential loop: close enough in distance, far enough in time
-    double tmp_dist_ = (keyframes[idx].pose_corrected_eig.block<3, 1>(0, 3) - front_keyframe.pose_corrected_eig.block<3, 1>(0, 3)).norm();
-    if (m_loop_det_radi > tmp_dist_ && m_loop_det_tdiff_thr < (front_keyframe.timestamp - keyframes[idx].timestamp))
-    {
-      if (tmp_dist_ < shortest_distance_)
-      {
-        shortest_distance_ = tmp_dist_;
-        closest_idx_ = keyframes[idx].idx;
-      }
-    }
-  }
-  return closest_idx_;
-}
+
