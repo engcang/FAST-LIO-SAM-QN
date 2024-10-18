@@ -351,7 +351,7 @@ void FastLioSamQn::visTimerFunc(const ros::TimerEvent& event)
         *corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
       }
     }
-    const auto voxelized_map = voxelizePcd(corrected_map, m_voxel_res);
+    const auto &voxelized_map = voxelizePcd(corrected_map, m_voxel_res);
     m_corrected_pcd_map_pub.publish(pclToPclRos(*voxelized_map, m_map_frame));
     m_global_map_vis_switch = false;
   }
@@ -445,7 +445,7 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
         *corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
       }
     }
-    const auto voxelized_map = voxelizePcd(corrected_map, m_voxel_res);
+    const auto &voxelized_map = voxelizePcd(corrected_map, m_voxel_res);
     pcl::io::savePCDFileASCII<PointType> (seq_directory_ + "/" + m_seq_name + "_map.pcd", *voxelized_map);
     cout << "\033[32;1mAccumulated map cloud saved in .pcd format\033[0m" << endl;
   }
