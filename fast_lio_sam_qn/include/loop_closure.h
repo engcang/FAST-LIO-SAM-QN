@@ -50,6 +50,14 @@ struct LoopClosureConfig {
   QuatroConfig quatro_config_; 
 };
 
+struct RegistrationOutput
+{
+  bool is_valid                     = false;
+  bool is_converged                 = false;
+  double score_                     = std::numeric_limits<float>::max();
+  Eigen::Matrix4d pose_between_eig_ = Eigen::Matrix4d::Identity();
+};
+
 class LoopClosure
 {
   private:

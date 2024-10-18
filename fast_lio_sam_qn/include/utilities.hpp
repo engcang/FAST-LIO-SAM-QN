@@ -50,14 +50,6 @@ struct PosePcd
   PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
 };
 
-struct RegistrationOutput
-{
-  bool is_valid                    = false;
-  bool is_converged                = false;
-  double score                     = std::numeric_limits<float>::max();
-  Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
-};
-
 inline pcl::PointCloud<PointType>::Ptr voxelizePcd(const pcl::PointCloud<PointType> &pcd_in, const float voxel_res)
 {
   static pcl::VoxelGrid<PointType> voxelgrid;
