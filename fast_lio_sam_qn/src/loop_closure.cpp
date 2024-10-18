@@ -18,8 +18,6 @@ LoopClosure::LoopClosure(const LoopClosureConfig &config)
   ////// quatro init
   m_quatro_handler = std::make_shared<quatro<PointType>>(qc.fpfh_normal_radius_, qc.fpfh_radius_, qc.noise_bound_, qc.rot_gnc_factor_, qc.rot_cost_diff_thr_,
                                                         qc.quatro_max_iter_, qc.estimat_scale_, qc.use_optimized_matching_, qc.quatro_distance_threshold_, qc.quatro_max_num_corres_);
-
-  ROS_INFO("Loop Closure Started...");
 }
 
 LoopClosure::~LoopClosure() {}
@@ -72,8 +70,8 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> LoopClosure::
 RegistrationOutput LoopClosure::icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
 {
   RegistrationOutput reg_output;
+  aligned_.clear(); 
   // merge subkeyframes before ICP
-  pcl::PointCloud<PointType> aligned_;
   pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
   pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
   *dst_ = dst_raw_;
@@ -83,10 +81,7 @@ RegistrationOutput LoopClosure::icpAlignment(const pcl::PointCloud<PointType> &s
   m_nano_gicp.setInputTarget(dst_);
   m_nano_gicp.calculateTargetCovariances();
   m_nano_gicp.align(aligned_);
-  // vis for debug
-  // m_debug_src_pub.publish(pclToPclRos(src_raw_, m_map_frame));
-  // m_debug_dst_pub.publish(pclToPclRos(dst_raw_, m_map_frame));
-  // m_debug_fine_aligned_pub.publish(pclToPclRos(aligned_, m_map_frame));
+  
   // handle results
   reg_output.score = m_nano_gicp.getFitnessScore();
   if(m_nano_gicp.hasConverged() && reg_output.score < config_.gicp_config_.icp_score_thr_) // if matchness score is lower than threshold, (lower is better)
@@ -100,20 +95,31 @@ RegistrationOutput LoopClosure::icpAlignment(const pcl::PointCloud<PointType> &s
 RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
 {
   RegistrationOutput reg_output;
+  coarse_aligned_.clear(); 
   reg_output.pose_between_eig = (m_quatro_handler->align(src_raw_, dst_raw_, reg_output.is_converged));
   if (!reg_output.is_converged) return reg_output;
   else //if valid,
   {
     // coarse align with the result of Quatro
-    const pcl::PointCloud<PointType> &src_coarse_aligned_ = transformPcd(src_raw_, reg_output.pose_between_eig);
-    const auto &fine_output = icpAlignment(src_coarse_aligned_, dst_raw_);
+    coarse_aligned_ = transformPcd(src_raw_, reg_output.pose_between_eig);
+    const auto &fine_output = icpAlignment(coarse_aligned_, dst_raw_);
 
     const auto quatro_tf_       = reg_output.pose_between_eig;
     reg_output.pose_between_eig = fine_output.pose_between_eig * quatro_tf_; // IMPORTANT: take care of the order
     reg_output.is_converged     = fine_output.is_converged;
     reg_output.score            = fine_output.score;
-
-    // m_debug_coarse_aligned_pub.publish(pclToPclRos(src_coarse_aligned_, m_map_frame));
   }
   return reg_output;
 }
+
+pcl::PointCloud<PointType> LoopClosure::getCoarseAlignedCloud()
+{
+  return coarse_aligned_;
+}
+
+// NOTE(hlim): To cover ICP-only mode, I just set `Final`, not `Fine`
+pcl::PointCloud<PointType> LoopClosure::getFinalAlignedCloud()
+{
+  return aligned_;
+}
+

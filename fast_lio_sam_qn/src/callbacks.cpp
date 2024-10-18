@@ -164,6 +164,11 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
       ROS_INFO("\036[1;35mExecute GICP\033[0m");
       reg_output = loop_closure_->icpAlignment(src_raw, dst_raw);
     }
+    m_debug_src_pub.publish(pclToPclRos(src_raw, m_map_frame));
+    m_debug_dst_pub.publish(pclToPclRos(dst_raw, m_map_frame));
+    m_debug_fine_aligned_pub.publish(pclToPclRos(loop_closure_->getFinalAlignedCloud(), m_map_frame));
+    m_debug_coarse_aligned_pub.publish(pclToPclRos(loop_closure_->getCoarseAlignedCloud(), m_map_frame));
+
 
     if(reg_output.is_converged) // add loop factor
     {

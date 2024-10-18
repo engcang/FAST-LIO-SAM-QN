@@ -55,6 +55,9 @@ class LoopClosure
   
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
+
+    pcl::PointCloud<PointType> coarse_aligned_;
+    pcl::PointCloud<PointType> aligned_;
     
     LoopClosureConfig config_;
 
@@ -68,7 +71,8 @@ class LoopClosure
     RegistrationOutput icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
     RegistrationOutput coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
 
-  // private:
+    pcl::PointCloud<PointType> getCoarseAlignedCloud();
+    pcl::PointCloud<PointType> getFinalAlignedCloud();
 };
 
 #endif
