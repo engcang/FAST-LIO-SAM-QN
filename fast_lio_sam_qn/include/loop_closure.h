@@ -41,6 +41,7 @@ struct LoopClosureConfig {
   bool enable_quatro_          = true;
   bool enable_submap_matching_ = true;
 
+  int num_submap_keyframes_ = 10;
   double voxel_res_ = 0.1;
   double loop_detection_radius_;
   double loop_detection_timediff_threshold_;
@@ -56,6 +57,10 @@ class LoopClosure
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
 
+    int closest_keyframe_idx_ = -1;
+
+    pcl::PointCloud<PointType>::Ptr src_cloud_;
+    pcl::PointCloud<PointType>::Ptr dst_cloud_;
     pcl::PointCloud<PointType> coarse_aligned_;
     pcl::PointCloud<PointType> aligned_;
     

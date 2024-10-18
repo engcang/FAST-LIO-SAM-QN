@@ -18,6 +18,9 @@ LoopClosure::LoopClosure(const LoopClosureConfig &config)
   ////// quatro init
   m_quatro_handler = std::make_shared<quatro<PointType>>(qc.fpfh_normal_radius_, qc.fpfh_radius_, qc.noise_bound_, qc.rot_gnc_factor_, qc.rot_cost_diff_thr_,
                                                         qc.quatro_max_iter_, qc.estimat_scale_, qc.use_optimized_matching_, qc.quatro_distance_threshold_, qc.quatro_max_num_corres_);
+
+  src_cloud_.reset(new pcl::PointCloud<PointType>);
+  dst_cloud_.reset(new pcl::PointCloud<PointType>);
 }
 
 LoopClosure::~LoopClosure() {}
