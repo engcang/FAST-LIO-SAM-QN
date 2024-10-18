@@ -2,7 +2,7 @@
 #define FAST_LIO_SAM_QN_MAIN_H
 
 ///// coded headers
-#include "utilities.h"
+#include "utilities.hpp"
 ///// common headers
 #include <time.h>
 #include <math.h>
@@ -27,29 +27,11 @@
 #include <tf_conversions/tf_eigen.h> // tf <-> eigen
 #include <tf/transform_broadcaster.h> // broadcaster
 #include <std_msgs/String.h>
-#include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-///// PCL
-#include <pcl/point_types.h> //pt
-#include <pcl/point_cloud.h> //cloud
-#include <pcl/common/transforms.h> //transformPointCloud
-#include <pcl/conversions.h> //ros<->pcl
-#include <pcl_conversions/pcl_conversions.h> //ros<->pcl
-#include <pcl/filters/voxel_grid.h> //voxelgrid
-#include <pcl/io/pcd_io.h> // save map
-///// Nano-GICP
-#include <nano_gicp/point_type_nano_gicp.hpp>
-#include <nano_gicp/nano_gicp.hpp>
-///// Quatro
-#include <quatro/quatro_module.h>
-///// Eigen
-#include <Eigen/Eigen> // whole Eigen library: Sparse(Linearalgebra) + Dense(Core+Geometry+LU+Cholesky+SVD+QR+Eigenvalues)
 ///// GTSAM
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Point3.h>
@@ -61,33 +43,14 @@
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/ISAM2.h>
 
-using namespace std::chrono;
+#include "loop_closure.h"
+
 namespace fs = std::filesystem;
-using PointType = pcl::PointXYZI;
+using namespace std::chrono;
 typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> odom_pcd_sync_pol;
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-struct PosePcd
-{
-  pcl::PointCloud<PointType> pcd;
-  Eigen::Matrix4d pose_eig = Eigen::Matrix4d::Identity();
-  Eigen::Matrix4d pose_corrected_eig = Eigen::Matrix4d::Identity();
-  double timestamp;
-  int idx;
-  bool processed = false;
-  PosePcd(){};
-  PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
-};
-
-struct RegistrationOutput
-{
-  Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
-  bool is_converged = false;
-  double score = std::numeric_limits<double>::max();
-};
-////////////////////////////////////////////////////////////////////////////////////////////////////
-class FastLioSamQnClass
+class FastLioSamQn
 {
   private:
     ///// basic params
@@ -110,12 +73,8 @@ class FastLioSamQnClass
     gtsam::Values m_corrected_esti;
     double m_keyframe_thr;
     ///// loop
-    pcl::VoxelGrid<PointType> m_voxelgrid, m_voxelgrid_vis;
-    nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
-    shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
-    bool m_enable_submap_matching = false;
-    bool m_enable_quatro = false;
-    double m_icp_score_thr, m_loop_det_radi, m_loop_det_tdiff_thr;
+    
+    double m_voxel_res;
     int m_sub_key_num;
     std::vector<std::pair<size_t, size_t>> m_loop_idx_pairs; //for vis
     bool m_loop_added_flag = false; //for opt
@@ -140,25 +99,18 @@ class FastLioSamQnClass
     shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> m_sub_pcd = nullptr;
     ros::Subscriber m_sub_save_flag;
 
+    LoopClosureConfig lc_config_;
+    std::unique_ptr<LoopClosure> loop_closure_;
     ///// functions
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW //note for Eigen alignment, this might not be necessary from C++17
 
-    FastLioSamQnClass(const ros::NodeHandle& n_private);
-    ~FastLioSamQnClass();
+    FastLioSamQn(const ros::NodeHandle& n_private);
+    ~FastLioSamQn();
   private:
     //methods
     void updateVisVars(const PosePcd &pose_pcd_in);
-    void voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in);
     bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
-    int getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes);
-    std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes,
-                                                                                         const int src_idx, const int dst_idx,
-                                                                                         const int submap_range,
-                                                                                         const bool enable_quatro,
-                                                                                         const bool enable_submap_matching);
-    RegistrationOutput icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
-    RegistrationOutput coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_);
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
     void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
@@ -166,7 +118,6 @@ class FastLioSamQnClass
     void loopTimerFunc(const ros::TimerEvent& event);
     void visTimerFunc(const ros::TimerEvent& event);
 };
-
 
 
 #endif
