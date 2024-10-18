@@ -11,18 +11,52 @@
 #include <tf_conversions/tf_eigen.h> // tf <-> eigen
 #include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 ///// PCL
 #include <pcl/point_types.h> //pt
 #include <pcl/point_cloud.h> //cloud
 #include <pcl/conversions.h> //ros<->pcl
 #include <pcl_conversions/pcl_conversions.h> //ros<->pcl
 #include <pcl/common/transforms.h>
+#include <pcl/filters/voxel_grid.h> //voxelgrid
+#include <pcl/io/pcd_io.h> // save map
+
 ///// Eigen
 #include <Eigen/Eigen> // whole Eigen library: Sparse(Linearalgebra) + Dense(Core+Geometry+LU+Cholesky+SVD+QR+Eigenvalues)
 ///// GTSAM
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Point3.h>
 #include <gtsam/geometry/Pose3.h>
+#include <gtsam/slam/PriorFactor.h>
+#include <gtsam/slam/BetweenFactor.h>
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
+#include <gtsam/nonlinear/Values.h>
+#include <gtsam/nonlinear/ISAM2.h>
+
+
+using PointType = pcl::PointXYZI;
+
+struct PosePcd
+{
+  pcl::PointCloud<PointType> pcd;
+  Eigen::Matrix4d pose_eig = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d pose_corrected_eig = Eigen::Matrix4d::Identity();
+  double timestamp;
+  int idx;
+  bool processed = false;
+  PosePcd(){};
+  PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
+};
+
+struct RegistrationOutput
+{
+  Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
+  bool is_converged                = false;
+  double score                     = std::numeric_limits<float>::max();
+};
+
 
 
 //////////////////////////////////////////////////////////////////////

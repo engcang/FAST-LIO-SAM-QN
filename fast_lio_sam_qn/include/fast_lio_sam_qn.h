@@ -2,7 +2,7 @@
 #define FAST_LIO_SAM_QN_MAIN_H
 
 ///// coded headers
-#include "utilities.h"
+#include "utilities.hpp"
 ///// common headers
 #include <time.h>
 #include <math.h>
@@ -24,29 +24,11 @@
 #include <tf_conversions/tf_eigen.h> // tf <-> eigen
 #include <tf/transform_broadcaster.h> // broadcaster
 #include <std_msgs/String.h>
-#include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-///// PCL
-#include <pcl/point_types.h> //pt
-#include <pcl/point_cloud.h> //cloud
-#include <pcl/common/transforms.h> //transformPointCloud
-#include <pcl/conversions.h> //ros<->pcl
-#include <pcl_conversions/pcl_conversions.h> //ros<->pcl
-#include <pcl/filters/voxel_grid.h> //voxelgrid
-#include <pcl/io/pcd_io.h> // save map
-///// Nano-GICP
-#include <nano_gicp/point_type_nano_gicp.hpp>
-#include <nano_gicp/nano_gicp.hpp>
-///// Quatro
-#include <quatro/quatro_module.h>
-///// Eigen
-#include <Eigen/Eigen> // whole Eigen library: Sparse(Linearalgebra) + Dense(Core+Geometry+LU+Cholesky+SVD+QR+Eigenvalues)
 ///// GTSAM
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Point3.h>
@@ -59,29 +41,8 @@
 #include <gtsam/nonlinear/ISAM2.h>
 
 using namespace std::chrono;
-using PointType = pcl::PointXYZI;
 typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> odom_pcd_sync_pol;
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-struct PosePcd
-{
-  pcl::PointCloud<PointType> pcd;
-  Eigen::Matrix4d pose_eig = Eigen::Matrix4d::Identity();
-  Eigen::Matrix4d pose_corrected_eig = Eigen::Matrix4d::Identity();
-  double timestamp;
-  int idx;
-  bool processed = false;
-  PosePcd(){};
-  PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
-};
-
-struct RegistrationOutput
-{
-  Eigen::Matrix4d pose_between_eig = Eigen::Matrix4d::Identity();
-  bool is_converged                = false;
-  double score                     = std::numeric_limits<float>::max();
-};
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class FastLioSamQn
 {

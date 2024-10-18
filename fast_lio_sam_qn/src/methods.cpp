@@ -29,15 +29,6 @@ visualization_msgs::Marker FastLioSamQn::getLoopMarkers(const gtsam::Values &cor
   return edges_;
 }
 
-void FastLioSamQn::voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in)
-{
-  pcl::PointCloud<PointType>::Ptr before_(new pcl::PointCloud<PointType>);
-  *before_ = pcd_in;
-  voxelgrid.setInputCloud(before_);
-  voxelgrid.filter(pcd_in);
-  return;
-}
-
 bool FastLioSamQn::checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd)
 {
   return m_keyframe_thr < (latest_pose_pcd.pose_corrected_eig.block<3, 1>(0, 3) - pose_pcd_in.pose_corrected_eig.block<3, 1>(0, 3)).norm();
