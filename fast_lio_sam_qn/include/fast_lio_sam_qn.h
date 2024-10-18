@@ -67,12 +67,13 @@ class FastLioSamQn
     gtsam::Values m_corrected_esti;
     double m_keyframe_thr;
     ///// loop
-    pcl::VoxelGrid<PointType> m_voxelgrid, m_voxelgrid_vis;
     nano_gicp::NanoGICP<PointType, PointType> m_nano_gicp;
     shared_ptr<quatro<PointType>> m_quatro_handler = nullptr;
     bool m_enable_submap_matching = false;
     bool m_enable_quatro = false;
     double m_icp_score_thr, m_loop_det_radi, m_loop_det_tdiff_thr;
+    
+    double m_voxel_res;
     int m_sub_key_num;
     std::vector<pair<int, int>> m_loop_idx_pairs; //for vis
     bool m_loop_added_flag = false; //for opt
@@ -106,7 +107,6 @@ class FastLioSamQn
   private:
     //methods
     void updateVisVars(const PosePcd &pose_pcd_in);
-    void voxelizePcd(pcl::VoxelGrid<PointType> &voxelgrid, pcl::PointCloud<PointType> &pcd_in);
     bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
     int getClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes);
     std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const bool enable_quatro, const bool enable_submap_matching);

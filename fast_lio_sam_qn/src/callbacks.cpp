@@ -246,16 +246,16 @@ void FastLioSamQn::visTimerFunc(const ros::TimerEvent& event)
   //// 3. global map
   if (m_global_map_vis_switch && m_corrected_pcd_map_pub.getNumSubscribers() > 0) //save time, only once
   {
-    pcl::PointCloud<PointType> corrected_map_;
+    pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
     {
       std::lock_guard<std::mutex> lock(m_keyframes_mutex);
       for (int i = 0; i < m_keyframes.size(); ++i)
       {
-        corrected_map_ += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+        *corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
       }
     }
-    voxelizePcd(m_voxelgrid, corrected_map_);
-    m_corrected_pcd_map_pub.publish(pclToPclRos(corrected_map_, m_map_frame));
+    const auto voxelized_map = voxelizePcd(corrected_map, m_voxel_res);
+    m_corrected_pcd_map_pub.publish(pclToPclRos(*voxelized_map, m_map_frame));
     m_global_map_vis_switch = false;
   }
   if (!m_global_map_vis_switch && m_corrected_pcd_map_pub.getNumSubscribers() == 0)
@@ -337,16 +337,16 @@ void FastLioSamQn::SaveFlagCallback(const std_msgs::String::ConstPtr& msg)
 
   if (m_save_map_pcd)
   {
-    pcl::PointCloud<PointType> corrected_map;
+    pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
     {
       std::lock_guard<std::mutex> lock(m_keyframes_mutex);
       for (size_t i = 0; i < m_keyframes.size(); ++i)
       {
-        corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+        *corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
       }
     }
-    voxelizePcd(m_voxelgrid, corrected_map);
-    pcl::io::savePCDFileASCII<PointType> (seq_directory + "/" + m_seq_name + "_map.pcd", corrected_map);
+    const auto voxelized_map = voxelizePcd(corrected_map, m_voxel_res);
+    pcl::io::savePCDFileASCII<PointType> (seq_directory + "/" + m_seq_name + "_map.pcd", *voxelized_map);
     cout << "\033[32;1mAccumulated map cloud saved in .pcd format\033[0m" << endl;
   }
 }

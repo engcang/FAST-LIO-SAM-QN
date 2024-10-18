@@ -77,7 +77,6 @@ FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : m_nh(n_private)
   isam_params_.relinearizeSkip = 1;
   m_isam_handler = std::make_shared<gtsam::ISAM2>(isam_params_);
   ////// loop init
-  m_voxelgrid.setLeafSize(quatro_gicp_vox_res_, quatro_gicp_vox_res_, quatro_gicp_vox_res_);
   ////// nano_gicp init
   m_nano_gicp.setMaxCorrespondenceDistance(m_loop_det_radi*2.0);
   m_nano_gicp.setNumThreads(nano_thread_number_);

@@ -57,7 +57,32 @@ struct RegistrationOutput
   double score                     = std::numeric_limits<float>::max();
 };
 
+inline pcl::PointCloud<PointType>::Ptr voxelizePcd(const pcl::PointCloud<PointType> &pcd_in, const float voxel_res)
+{
+  static pcl::VoxelGrid<PointType> voxelgrid;
+  voxelgrid.setLeafSize(voxel_res, voxel_res, voxel_res);
 
+  pcl::PointCloud<PointType>::Ptr pcd_in_ptr(new pcl::PointCloud<PointType>);
+  pcl::PointCloud<PointType>::Ptr pcd_out(new pcl::PointCloud<PointType>);
+  pcd_in_ptr->reserve(pcd_in.size());
+  pcd_out->reserve(pcd_in.size());
+  *pcd_in_ptr = pcd_in;
+  voxelgrid.setInputCloud(pcd_in_ptr);
+  voxelgrid.filter(*pcd_out);
+  return pcd_out;
+}
+
+inline pcl::PointCloud<PointType>::Ptr voxelizePcd(const pcl::PointCloud<PointType>::Ptr &pcd_in, const float voxel_res)
+{
+  static pcl::VoxelGrid<PointType> voxelgrid;
+  voxelgrid.setLeafSize(voxel_res, voxel_res, voxel_res);
+
+  pcl::PointCloud<PointType>::Ptr pcd_out(new pcl::PointCloud<PointType>);
+  pcd_out->reserve(pcd_in->size());
+  voxelgrid.setInputCloud(pcd_in);
+  voxelgrid.filter(*pcd_out);
+  return pcd_out;
+}
 
 //////////////////////////////////////////////////////////////////////
 ///// conversions
