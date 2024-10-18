@@ -5,7 +5,7 @@ basic:
 
 keyframe:
   keyframe_threshold: 1.5                     # unit [meter] every this distance, generate keyframe
-  subkeyframes_number: 5                      # how many subkeyframes are merged to ICP with current keyframe (closest-this ~ closest+this, if exists)
+  num_submap_keyframes: 10                     # how many subkeyframes are merged to ICP with current keyframe (closest-this ~ closest+this, if exists)
   enable_submap_matching: true                # If it is set to be `true`, submap-level (coarse-to-)fine alignment will be performed
 
 loop:

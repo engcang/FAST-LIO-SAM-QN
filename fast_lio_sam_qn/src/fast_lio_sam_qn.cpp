@@ -37,7 +37,7 @@ FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : m_nh(n_private)
   m_nh.param<double>("/quatro_nano_gicp_voxel_resolution", lc_config_.voxel_res_, 0.3);
   /* keyframe */
   m_nh.param<double>("/keyframe/keyframe_threshold", m_keyframe_thr, 1.0);
-  m_nh.param<int>("/keyframe/subkeyframes_number", m_sub_key_num, 5);
+  m_nh.param<int>("/keyframe/num_submap_keyframes", lc_config_.num_submap_keyframes_, 5);
   m_nh.param<bool>("/keyframe/enable_submap_matching", lc_config_.enable_submap_matching_, false);
   
   /* loop */
