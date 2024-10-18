@@ -30,7 +30,7 @@ struct QuatroConfig {
   int    quatro_max_iter_                = 50;
   
   double quatro_distance_threshold_      = 30.0;
-  double fpfh_normal_radius_             = 0.20; // It should be 2.5 - 3.0 * `voxel_res`
+  double fpfh_normal_radius_             = 0.30; // It should be 2.5 - 3.0 * `voxel_res`
   double fpfh_radius_                    = 0.50; // It should be 5.0 * `voxel_res`
   double noise_bound_                    = 0.30;
   double rot_gnc_factor_                 = 1.40;
@@ -41,7 +41,7 @@ struct LoopClosureConfig {
   bool enable_quatro_          = true;
   bool enable_submap_matching_ = true;
 
-  double voxel_res_ = 1.0;
+  double voxel_res_ = 0.1;
   double loop_detection_radius_;
   double loop_detection_timediff_threshold_;
   
