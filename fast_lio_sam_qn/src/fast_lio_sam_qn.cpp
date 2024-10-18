@@ -256,7 +256,7 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
   high_resolution_clock::time_point t2_ = high_resolution_clock::now();
   bool if_loop_occured_ = false;
   // from not_proc_key_copy_ keyframe to old keyframes in threshold radius, get the closest keyframe
-  int closest_keyframe_idx_ = getClosestKeyframeIdx(not_proc_key_copy_, keyframes_copy_);
+  int closest_keyframe_idx_ = loop_closure_->fetchClosestKeyframeIdx(not_proc_key_copy_, keyframes_copy_);
   if (closest_keyframe_idx_ >= 0) //if exists
   {
     // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)

@@ -22,6 +22,29 @@ LoopClosure::LoopClosure(const LoopClosureConfig &config)
 
 LoopClosure::~LoopClosure() {}
 
+int LoopClosure::fetchClosestKeyframeIdx(const PosePcd &front_keyframe, const std::vector<PosePcd> &keyframes)
+{
+  const auto &loop_det_radi = config_.loop_detection_radius_;
+  const auto &loop_det_tdiff_thr = config_.loop_detection_timediff_threshold_;
+
+  double shortest_distance_ = loop_det_radi * 3.0;
+  int closest_idx_ = -1;
+  for (int idx = 0; idx < keyframes.size()-1; ++idx)
+  {
+    //check if potential loop: close enough in distance, far enough in time
+    double tmp_dist = (keyframes[idx].pose_corrected_eig.block<3, 1>(0, 3) - front_keyframe.pose_corrected_eig.block<3, 1>(0, 3)).norm();
+    if (loop_det_radi > tmp_dist && loop_det_tdiff_thr < (front_keyframe.timestamp - keyframes[idx].timestamp))
+    {
+      if (tmp_dist < shortest_distance_)
+      {
+        shortest_distance_ = tmp_dist;
+        closest_idx_ = keyframes[idx].idx;
+      }
+    }
+  }
+  return closest_idx_;
+}
+
 std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> LoopClosure::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const double voxel_res, const bool enable_quatro, const bool enable_submap_matching)
 {
   pcl::PointCloud<PointType> dst_raw_, src_raw_;
