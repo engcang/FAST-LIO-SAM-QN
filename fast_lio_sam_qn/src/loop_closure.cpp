@@ -131,9 +131,8 @@ RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<Poin
     const auto &fine_output = icpAlignment(coarse_aligned_, dst_raw_);
 
     const auto quatro_tf_       = reg_output.pose_between_eig;
+    reg_output = fine_output;
     reg_output.pose_between_eig = fine_output.pose_between_eig * quatro_tf_; // IMPORTANT: take care of the order
-    reg_output.is_converged     = fine_output.is_converged;
-    reg_output.score            = fine_output.score;
   }
   return reg_output;
 }
