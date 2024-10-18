@@ -1,7 +1,7 @@
 <launch>
 
 	<arg name="rviz" default="true" />
-	<arg name="lidar" default="ouster" /> <!-- ouster, velodyne, livox -->
+	<arg name="lidar" default="ouster" /> <!-- ouster, velodyne, livox, kitti, ... -->
 	<arg name="odom_topic" default="/Odometry" /> 
 	<arg name="lidar_topic" default="/cloud_registered" /> 
 
@@ -12,9 +12,9 @@
 	<!-- run fast_lio_sam_qn -->
 	<rosparam command="load" file="$(find fast_lio_sam_qn)/config/config.yaml" />
 	<node pkg="fast_lio_sam_qn" type="fast_lio_sam_qn_node" name="fast_lio_sam_qn_node" output="screen">
-    <remap from="/Odometry" to="$(arg odom_topic)"/>
-    <remap from="/cloud_registered" to="$(arg lidar_topic)"/>
-  </node>
+		<remap from="/Odometry" to="$(arg odom_topic)"/>
+		<remap from="/cloud_registered" to="$(arg lidar_topic)"/>
+	</node>
 
 	<!-- run fast_lio -->
 	<include if="$(eval arg ('lidar') == 'ouster')" file="$(find fast_lio)/launch/mapping_ouster64.launch">
@@ -24,9 +24,6 @@
 		<arg name="rviz" value="false"/>
 	</include>
 	<include if="$(eval arg ('lidar') == 'livox')" file="$(find fast_lio)/launch/mapping_avia.launch">
-		<arg name="rviz" value="false"/>
-	</include>
-	<include if="$(eval arg ('lidar') == 'hilti')" file="$(find fast_lio)/launch/hilti.launch">
 		<arg name="rviz" value="false"/>
 	</include>
 	<include if="$(eval arg ('lidar') == 'kitti')" file="$(find fast_lio)/../fastlio_config_launch/kitti.launch">
@@ -41,7 +38,7 @@
 	<include if="$(eval arg ('lidar') == 'kimera-multi-acl_jackal2')" file="$(find fast_lio)/../fastlio_config_launch/kimera-multi-acl_jackal2.launch">
 		<arg name="rviz" value="false"/>
 	</include>
-  <include if="$(eval arg ('lidar') == 'kimera-multi-apis')" file="$(find fast_lio)/../fastlio_config_launch/kimera-multi-apis.launch">
+	<include if="$(eval arg ('lidar') == 'kimera-multi-apis')" file="$(find fast_lio)/../fastlio_config_launch/kimera-multi-apis.launch">
 		<arg name="rviz" value="false"/>
 	</include>
 	<include if="$(eval arg ('lidar') == 'vbr-colosseo')" file="$(find fast_lio)/../fastlio_config_launch/vbr-colosseo.launch">

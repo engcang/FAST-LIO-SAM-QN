@@ -13,7 +13,10 @@
 #include <mutex>
 #include <string>
 #include <utility> // pair, make_pair
+#include <tuple>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 ///// ROS
 #include <ros/ros.h>
 #include <ros/package.h> // get package_path
@@ -42,6 +45,7 @@
 
 #include "loop_closure.h"
 
+namespace fs = std::filesystem;
 using namespace std::chrono;
 typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> odom_pcd_sync_pol;
 
@@ -72,7 +76,7 @@ class FastLioSamQn
     
     double m_voxel_res;
     int m_sub_key_num;
-    std::vector<pair<int, int>> m_loop_idx_pairs; //for vis
+    std::vector<std::pair<size_t, size_t>> m_loop_idx_pairs; //for vis
     bool m_loop_added_flag = false; //for opt
     bool m_loop_added_flag_vis = false; //for vis
     ///// visualize
@@ -99,7 +103,7 @@ class FastLioSamQn
     std::unique_ptr<LoopClosure> loop_closure_;
     ///// functions
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW //note for Eigen alignment, this might not be necessary from C++17
 
     FastLioSamQn(const ros::NodeHandle& n_private);
     ~FastLioSamQn();
@@ -110,7 +114,7 @@ class FastLioSamQn
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb
     void odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg);
-    void SaveFlagCallback(const std_msgs::String::ConstPtr &msg);
+    void saveFlagCallback(const std_msgs::String::ConstPtr &msg);
     void loopTimerFunc(const ros::TimerEvent& event);
     void visTimerFunc(const ros::TimerEvent& event);
 };
