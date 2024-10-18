@@ -19,6 +19,7 @@ LoopClosure::LoopClosure(const LoopClosureConfig &config)
   m_quatro_handler = std::make_shared<quatro<PointType>>(qc.fpfh_normal_radius_, qc.fpfh_radius_, qc.noise_bound_, qc.rot_gnc_factor_, qc.rot_cost_diff_thr_,
                                                         qc.quatro_max_iter_, qc.estimat_scale_, qc.use_optimized_matching_, qc.quatro_distance_threshold_, qc.quatro_max_num_corres_);
 
+
   src_cloud_.reset(new pcl::PointCloud<PointType>);
   dst_cloud_.reset(new pcl::PointCloud<PointType>);
 }
@@ -31,7 +32,7 @@ int LoopClosure::fetchClosestKeyframeIdx(const PosePcd &front_keyframe, const st
   const auto &loop_det_tdiff_thr = config_.loop_detection_timediff_threshold_;
 
   double shortest_distance_ = loop_det_radi * 3.0;
-  int closest_idx_ = -1;
+  int closest_idx = -1;
   for (int idx = 0; idx < keyframes.size()-1; ++idx)
   {
     //check if potential loop: close enough in distance, far enough in time
@@ -41,41 +42,41 @@ int LoopClosure::fetchClosestKeyframeIdx(const PosePcd &front_keyframe, const st
       if (tmp_dist < shortest_distance_)
       {
         shortest_distance_ = tmp_dist;
-        closest_idx_ = keyframes[idx].idx;
+        closest_idx = keyframes[idx].idx;
       }
     }
   }
-  return closest_idx_;
+  return closest_idx;
 }
 
 std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> LoopClosure::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const double voxel_res, const bool enable_quatro, const bool enable_submap_matching)
 {
-  pcl::PointCloud<PointType> dst_raw_, src_raw_;
+  pcl::PointCloud<PointType> dst_accum, src_accum;
   int num_approx = keyframes[src_idx].pcd.size() * 2 * submap_range;
-  src_raw_.reserve(num_approx);
-  dst_raw_.reserve(num_approx);
+  src_accum.reserve(num_approx);
+  dst_accum.reserve(num_approx);
   if (enable_submap_matching)
   {
     for (int i = src_idx - submap_range; i < src_idx + submap_range + 1; ++i)
     {
       if (i >= 0 && i < keyframes.size()-1) // if exists
       {
-        src_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+        src_accum += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
       }
     }
     for (int i = dst_idx - submap_range; i < dst_idx + submap_range + 1; ++i)
     {
       if (i >= 0 && i < keyframes.size()-1) //if exists
       {
-        dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+        dst_accum += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
       }
     }
   }
   else 
   {
-    src_raw_ = transformPcd(keyframes[src_idx].pcd, keyframes[src_idx].pose_corrected_eig);
+    src_accum = transformPcd(keyframes[src_idx].pcd, keyframes[src_idx].pose_corrected_eig);
     if (enable_quatro) {
-      dst_raw_ = transformPcd(keyframes[dst_idx].pcd, keyframes[dst_idx].pose_corrected_eig);
+      dst_accum = transformPcd(keyframes[dst_idx].pcd, keyframes[dst_idx].pose_corrected_eig);
     } 
     else
     {
@@ -85,26 +86,26 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> LoopClosure::
       {
         if (i >= 0 && i < keyframes.size()-1) //if exists
         {
-          dst_raw_ += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+          dst_accum += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
         }
       }
     }
   }
-  return {*voxelizePcd(src_raw_, voxel_res), *voxelizePcd(dst_raw_, voxel_res)};
+  return {*voxelizePcd(src_accum, voxel_res), *voxelizePcd(dst_accum, voxel_res)};
 }
 
-RegistrationOutput LoopClosure::icpAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
+RegistrationOutput LoopClosure::icpAlignment(const pcl::PointCloud<PointType> &src, const pcl::PointCloud<PointType> &dst)
 {
   RegistrationOutput reg_output;
   aligned_.clear(); 
   // merge subkeyframes before ICP
-  pcl::PointCloud<PointType>::Ptr src_(new pcl::PointCloud<PointType>);
-  pcl::PointCloud<PointType>::Ptr dst_(new pcl::PointCloud<PointType>);
-  *dst_ = dst_raw_;
-  *src_ = src_raw_;
-  m_nano_gicp.setInputSource(src_);
+  pcl::PointCloud<PointType>::Ptr src_cloud(new pcl::PointCloud<PointType>());
+  pcl::PointCloud<PointType>::Ptr dst_cloud(new pcl::PointCloud<PointType>());
+  *src_cloud = src; 
+  *dst_cloud = dst; 
+  m_nano_gicp.setInputSource(src_cloud);
   m_nano_gicp.calculateSourceCovariances();
-  m_nano_gicp.setInputTarget(dst_);
+  m_nano_gicp.setInputTarget(dst_cloud);
   m_nano_gicp.calculateTargetCovariances();
   m_nano_gicp.align(aligned_);
   
@@ -112,23 +113,25 @@ RegistrationOutput LoopClosure::icpAlignment(const pcl::PointCloud<PointType> &s
   reg_output.score = m_nano_gicp.getFitnessScore();
   if(m_nano_gicp.hasConverged() && reg_output.score < config_.gicp_config_.icp_score_thr_) // if matchness score is lower than threshold, (lower is better)
   {
+    reg_output.is_valid = true;
     reg_output.is_converged = true;
     reg_output.pose_between_eig = m_nano_gicp.getFinalTransformation().cast<double>();
   }
   return reg_output;
 }
 
-RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<PointType> &src_raw_, const pcl::PointCloud<PointType> &dst_raw_)
+RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<PointType> &src, const pcl::PointCloud<PointType> &dst)
 {
   RegistrationOutput reg_output;
   coarse_aligned_.clear(); 
-  reg_output.pose_between_eig = (m_quatro_handler->align(src_raw_, dst_raw_, reg_output.is_converged));
+  
+  reg_output.pose_between_eig = (m_quatro_handler->align(src, dst, reg_output.is_converged));
   if (!reg_output.is_converged) return reg_output;
   else //if valid,
   {
     // coarse align with the result of Quatro
-    coarse_aligned_ = transformPcd(src_raw_, reg_output.pose_between_eig);
-    const auto &fine_output = icpAlignment(coarse_aligned_, dst_raw_);
+    coarse_aligned_ = transformPcd(src, reg_output.pose_between_eig);
+    const auto &fine_output = icpAlignment(coarse_aligned_, dst);
 
     const auto quatro_tf_       = reg_output.pose_between_eig;
     reg_output = fine_output;
