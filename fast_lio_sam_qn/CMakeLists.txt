@@ -63,7 +63,7 @@ include_directories(
 ###########
 ### main
 set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} ${OpenMP_LIBS} gtsam)
-add_library(${PROJECT_NAME}_modules src/methods.cpp src/loop_closure.cpp src/fast_lio_sam_qn.cpp)
+add_library(${PROJECT_NAME}_modules src/loop_closure.cpp src/fast_lio_sam_qn.cpp)
 target_link_libraries(${PROJECT_NAME}_modules ${COMMON_LIBS})
 
 add_executable(${PROJECT_NAME}_node src/main.cpp)
