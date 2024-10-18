@@ -259,11 +259,11 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
 
   if (closest_keyframe_idx < 0) return;
 
-  if (reg_output.is_valid)
+  if (reg_output.is_valid_)
   {
-    ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score, "\033[0m");
-    const auto &score_ = reg_output.score;
-    gtsam::Pose3 pose_from_ = poseEigToGtsamPose(reg_output.pose_between_eig * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
+    ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score_, "\033[0m");
+    const auto &score_ = reg_output.score_;
+    gtsam::Pose3 pose_from_ = poseEigToGtsamPose(reg_output.pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
     gtsam::Pose3 pose_to_ = poseEigToGtsamPose(keyframes_copy_[closest_keyframe_idx].pose_corrected_eig);
     gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
     {
@@ -277,7 +277,7 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
   }
   else 
   { 
-      ROS_WARN("Loop closure rejected. Score: %.3f", reg_output.score);
+      ROS_WARN("Loop closure rejected. Score: %.3f", reg_output.score_);
   }
   
   high_resolution_clock::time_point t3_ = high_resolution_clock::now();

@@ -52,10 +52,10 @@ struct LoopClosureConfig {
 
 struct RegistrationOutput
 {
-  bool is_valid                     = false;
-  bool is_converged                 = false;
-  double score_                     = std::numeric_limits<float>::max();
-  Eigen::Matrix4d pose_between_eig_ = Eigen::Matrix4d::Identity();
+  bool is_valid_                     = false;
+  bool is_converged_                 = false;
+  double score_                      = std::numeric_limits<float>::max();
+  Eigen::Matrix4d pose_between_eig_  = Eigen::Matrix4d::Identity();
 };
 
 class LoopClosure

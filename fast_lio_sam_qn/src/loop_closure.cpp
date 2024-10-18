@@ -110,12 +110,12 @@ RegistrationOutput LoopClosure::icpAlignment(const pcl::PointCloud<PointType> &s
   m_nano_gicp.align(aligned_);
   
   // handle results
-  reg_output.score = m_nano_gicp.getFitnessScore();
-  if(m_nano_gicp.hasConverged() && reg_output.score < config_.gicp_config_.icp_score_thr_) // if matchness score is lower than threshold, (lower is better)
+  reg_output.score_ = m_nano_gicp.getFitnessScore();
+  if(m_nano_gicp.hasConverged() && reg_output.score_ < config_.gicp_config_.icp_score_thr_) // if matchness score is lower than threshold, (lower is better)
   {
-    reg_output.is_valid = true;
-    reg_output.is_converged = true;
-    reg_output.pose_between_eig = m_nano_gicp.getFinalTransformation().cast<double>();
+    reg_output.is_valid_ = true;
+    reg_output.is_converged_ = true;
+    reg_output.pose_between_eig_ = m_nano_gicp.getFinalTransformation().cast<double>();
   }
   return reg_output;
 }
@@ -125,17 +125,17 @@ RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<Poin
   RegistrationOutput reg_output;
   coarse_aligned_.clear(); 
   
-  reg_output.pose_between_eig = (m_quatro_handler->align(src, dst, reg_output.is_converged));
-  if (!reg_output.is_converged) return reg_output;
+  reg_output.pose_between_eig_ = (m_quatro_handler->align(src, dst, reg_output.is_converged_));
+  if (!reg_output.is_converged_) return reg_output;
   else //if valid,
   {
     // coarse align with the result of Quatro
-    coarse_aligned_ = transformPcd(src, reg_output.pose_between_eig);
+    coarse_aligned_ = transformPcd(src, reg_output.pose_between_eig_);
     const auto &fine_output = icpAlignment(coarse_aligned_, dst);
 
-    const auto quatro_tf_       = reg_output.pose_between_eig;
+    const auto quatro_tf_       = reg_output.pose_between_eig_;
     reg_output = fine_output;
-    reg_output.pose_between_eig = fine_output.pose_between_eig * quatro_tf_; // IMPORTANT: take care of the order
+    reg_output.pose_between_eig_ = fine_output.pose_between_eig_ * quatro_tf_; // IMPORTANT: take care of the order
   }
   return reg_output;
 }
