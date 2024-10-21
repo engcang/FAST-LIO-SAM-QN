@@ -1,8 +1,6 @@
 #ifndef FAST_LIO_SAM_QN_MAIN_H
 #define FAST_LIO_SAM_QN_MAIN_H
 
-///// coded headers
-#include "utilities.hpp"
 ///// common headers
 #include <time.h>
 #include <math.h>
@@ -42,7 +40,8 @@
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/ISAM2.h>
-
+///// coded headers
+#include "utilities.hpp"
 #include "loop_closure.h"
 
 namespace fs = std::filesystem;
