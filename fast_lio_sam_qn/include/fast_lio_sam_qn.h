@@ -101,8 +101,6 @@ class FastLioSamQn
     std::unique_ptr<LoopClosure> loop_closure_;
     ///// functions
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW //note for Eigen alignment, this might not be necessary from C++17
-
     FastLioSamQn(const ros::NodeHandle& n_private);
     ~FastLioSamQn();
   private:
