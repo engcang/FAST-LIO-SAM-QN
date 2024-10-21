@@ -71,8 +71,6 @@ class FastLioSamQn
     gtsam::Values m_init_esti;
     gtsam::Values m_corrected_esti;
     double m_keyframe_thr;
-    ///// loop
-    
     double m_voxel_res;
     int m_sub_key_num;
     std::vector<std::pair<size_t, size_t>> m_loop_idx_pairs; //for vis
@@ -98,6 +96,7 @@ class FastLioSamQn
     shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> m_sub_pcd = nullptr;
     ros::Subscriber m_sub_save_flag;
 
+    ///// Loop closure
     LoopClosureConfig lc_config_;
     std::unique_ptr<LoopClosure> loop_closure_;
     ///// functions
