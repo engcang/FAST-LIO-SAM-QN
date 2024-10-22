@@ -67,7 +67,7 @@ class FastLioSamQn
     int current_keyframe_idx_ = 0;
     bool init_ = false;
     ///// graph and values
-    shared_ptr<gtsam::ISAM2> isam_handler_ = nullptr;
+    std::shared_ptr<gtsam::ISAM2> isam_handler_ = nullptr;
     gtsam::NonlinearFactorGraph gtsam_graph_;
     gtsam::Values init_esti_;
     gtsam::Values corrected_esti_;
@@ -92,9 +92,9 @@ class FastLioSamQn
     ros::Publisher debug_src_pub_, debug_dst_pub_, debug_coarse_aligned_pub_, debug_fine_aligned_pub_;
     ros::Timer loop_timer_, vis_timer_;
     // odom, pcd sync, and save flag subscribers
-    shared_ptr<message_filters::Synchronizer<odom_pcd_sync_pol>> sub_odom_pcd_sync_ = nullptr;
-    shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> sub_odom_ = nullptr;
-    shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> sub_pcd_ = nullptr;
+    std::shared_ptr<message_filters::Synchronizer<odom_pcd_sync_pol>> sub_odom_pcd_sync_ = nullptr;
+    std::shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> sub_odom_ = nullptr;
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> sub_pcd_ = nullptr;
     ros::Subscriber sub_save_flag_;
     ///// Loop closure
     LoopClosureConfig lc_config_;
