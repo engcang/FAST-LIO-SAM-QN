@@ -101,16 +101,16 @@ inline geometry_msgs::PoseStamped poseEigToPoseStamped(const Eigen::Matrix4d &po
 	tf::Matrix3x3 mat;
 	tf::matrixEigenToTF(pose_eig_in.block<3, 3>(0, 0), mat);
 	mat.getRPY(r, p, y);
-	tf::Quaternion quat_ = tf::createQuaternionFromRPY(r, p, y);
+	tf::Quaternion quat = tf::createQuaternionFromRPY(r, p, y);
 	geometry_msgs::PoseStamped pose;
 	pose.header.frame_id = frame_id;
 	pose.pose.position.x = pose_eig_in(0, 3);
 	pose.pose.position.y = pose_eig_in(1, 3);
 	pose.pose.position.z = pose_eig_in(2, 3);
-	pose.pose.orientation.w = quat_.getW();
-	pose.pose.orientation.x = quat_.getX();
-	pose.pose.orientation.y = quat_.getY();
-	pose.pose.orientation.z = quat_.getZ();
+	pose.pose.orientation.w = quat.getW();
+	pose.pose.orientation.x = quat.getX();
+	pose.pose.orientation.y = quat.getY();
+	pose.pose.orientation.z = quat.getZ();
 	return pose;
 }
 inline geometry_msgs::PoseStamped gtsamPoseToPoseStamped(const gtsam::Pose3 &gtsam_pose_in, std::string frame_id="map")
