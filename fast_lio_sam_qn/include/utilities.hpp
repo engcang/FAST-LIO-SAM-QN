@@ -113,6 +113,23 @@ inline geometry_msgs::PoseStamped poseEigToPoseStamped(const Eigen::Matrix4d &po
 	pose.pose.orientation.z = quat.getZ();
 	return pose;
 }
+
+inline tf::Transform poseEigToROSTf(const Eigen::Matrix4d &pose)
+{
+  Eigen::Quaterniond quat(pose.block<3,3>(0, 0));
+	tf::Transform transform;
+  transform.setOrigin(tf::Vector3(pose(0, 3), pose(1, 3), pose(2, 3)));
+  transform.setRotation(tf::Quaternion(quat.x(), quat.y(), quat.z(), quat.w()));
+	return transform;
+}
+
+inline tf::Transform poseStampedToROSTf(const geometry_msgs::PoseStamped &pose)
+{
+	tf::Transform transform;
+  transform.setOrigin(tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z));
+  transform.setRotation(tf::Quaternion(pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w));
+	return transform;
+}
 inline geometry_msgs::PoseStamped gtsamPoseToPoseStamped(const gtsam::Pose3 &gtsam_pose_in, std::string frame_id="map")
 {
 	tf::Quaternion quat = tf::createQuaternionFromRPY(gtsam_pose_in.rotation().roll(), gtsam_pose_in.rotation().pitch(), gtsam_pose_in.rotation().yaw());

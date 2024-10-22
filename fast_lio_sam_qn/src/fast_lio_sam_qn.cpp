@@ -100,12 +100,8 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
       std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
       odom_delta_ = odom_delta_ * last_odom_tf.inverse() * current_frame_.pose_eig_;
       current_frame_.pose_corrected_eig_ = last_corrected_pose_ * odom_delta_;
-      geometry_msgs::PoseStamped current_pose_stamped_ = poseEigToPoseStamped(current_frame_.pose_corrected_eig_, map_frame_);
-      realtime_pose_pub_.publish(current_pose_stamped_);
-      tf::Transform transform_;
-      transform_.setOrigin(tf::Vector3(current_pose_stamped_.pose.position.x, current_pose_stamped_.pose.position.y, current_pose_stamped_.pose.position.z));
-      transform_.setRotation(tf::Quaternion(current_pose_stamped_.pose.orientation.x, current_pose_stamped_.pose.orientation.y, current_pose_stamped_.pose.orientation.z, current_pose_stamped_.pose.orientation.w));
-      broadcaster_.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), map_frame_, "robot"));
+      realtime_pose_pub_.publish(poseEigToPoseStamped(current_frame_.pose_corrected_eig_, map_frame_));
+      broadcaster_.sendTransform(tf::StampedTransform(poseEigToROSTf(current_frame_.pose_corrected_eig_), ros::Time::now(), map_frame_, "robot"));
     }
     current_keyframe_idx_++;
     init_ = true;
@@ -118,15 +114,8 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
       std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
       odom_delta_ = odom_delta_ * last_odom_tf.inverse() * current_frame_.pose_eig_;
       current_frame_.pose_corrected_eig_ = last_corrected_pose_ * odom_delta_;
-      geometry_msgs::PoseStamped current_pose_stamped_ = poseEigToPoseStamped(current_frame_.pose_corrected_eig_, map_frame_);
-      realtime_pose_pub_.publish(current_pose_stamped_);
-      tf::Transform transform_;
-      transform_.setOrigin(tf::Vector3(current_pose_stamped_.pose.position.x, current_pose_stamped_.pose.position.y, current_pose_stamped_.pose.position.z));
-      transform_.setRotation(tf::Quaternion(current_pose_stamped_.pose.orientation.x,
-                                            current_pose_stamped_.pose.orientation.y,
-                                            current_pose_stamped_.pose.orientation.z,
-                                            current_pose_stamped_.pose.orientation.w));
-      broadcaster_.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), map_frame_, "robot"));
+      realtime_pose_pub_.publish(poseEigToPoseStamped(current_frame_.pose_corrected_eig_, map_frame_));
+      broadcaster_.sendTransform(tf::StampedTransform(poseEigToROSTf(current_frame_.pose_corrected_eig_), ros::Time::now(), map_frame_, "robot"));
     }
     // pub current scan in corrected pose frame
     corrected_current_pcd_pub_.publish(pclToPclRos(transformPcd(current_frame_.pcd_, current_frame_.pose_corrected_eig_), map_frame_));
