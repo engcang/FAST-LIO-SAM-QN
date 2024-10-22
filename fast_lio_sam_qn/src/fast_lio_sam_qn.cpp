@@ -452,8 +452,8 @@ void FastLioSamQn::updateOdomsAndPaths(const PosePcd &pose_pcd_in)
 {
   odoms_.points.emplace_back(pose_pcd_in.pose_eig_(0, 3), pose_pcd_in.pose_eig_(1, 3), pose_pcd_in.pose_eig_(2, 3));
   corrected_odoms_.points.emplace_back(pose_pcd_in.pose_corrected_eig_(0, 3), pose_pcd_in.pose_corrected_eig_(1, 3), pose_pcd_in.pose_corrected_eig_(2, 3));
-  odom_path_.poses.push_back(poseEigToPoseStamped(pose_pcd_in.pose_eig_, map_frame_));
-  corrected_path_.poses.push_back(poseEigToPoseStamped(pose_pcd_in.pose_corrected_eig_, map_frame_));
+  odom_path_.poses.emplace_back(poseEigToPoseStamped(pose_pcd_in.pose_eig_, map_frame_));
+  corrected_path_.poses.emplace_back(poseEigToPoseStamped(pose_pcd_in.pose_corrected_eig_, map_frame_));
   return;
 }
 
