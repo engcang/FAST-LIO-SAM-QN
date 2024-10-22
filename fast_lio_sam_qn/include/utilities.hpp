@@ -33,7 +33,6 @@
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/ISAM2.h>
 
-
 using PointType = pcl::PointXYZI;
 
 // struct PosePcd

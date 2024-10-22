@@ -72,7 +72,8 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> LoopClosure::
   else 
   {
     src_accum = transformPcd(keyframes[src_idx].pcd_, keyframes[src_idx].pose_corrected_eig_);
-    if (enable_quatro) {
+    if (enable_quatro) 
+    {
       dst_accum = transformPcd(keyframes[dst_idx].pcd_, keyframes[dst_idx].pose_corrected_eig_);
     } 
     else

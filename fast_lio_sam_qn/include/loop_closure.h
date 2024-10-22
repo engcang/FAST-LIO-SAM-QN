@@ -10,7 +10,8 @@
 #include "pose_pcd.hpp"
 #include "utilities.hpp"
 
-struct NanoGICPConfig {
+struct NanoGICPConfig 
+{
   int    nano_thread_number_             = 0;
   int    nano_correspondences_number_    = 15;
   int    nano_max_iter_                  = 32;
@@ -22,7 +23,8 @@ struct NanoGICPConfig {
   double ransac_outlier_rejection_threshold_ = 1.0;
 };
 
-struct QuatroConfig {
+struct QuatroConfig 
+{
   bool   use_optimized_matching_         = true;
   bool   estimat_scale_                  = false;
   int    quatro_max_num_corres_          = 500;
@@ -32,13 +34,14 @@ struct QuatroConfig {
   double fpfh_radius_                    = 0.50; // It should be 5.0 * `voxel_res`
   double noise_bound_                    = 0.30;
   double rot_gnc_factor_                 = 1.40;
-  double rot_cost_diff_thr_              = 0.0001;};
+  double rot_cost_diff_thr_              = 0.0001;
+};
 
-
-struct LoopClosureConfig {
+struct LoopClosureConfig 
+{
   bool enable_quatro_          = true;
   bool enable_submap_matching_ = true;
-  int num_submap_keyframes_    = 10;
+  int num_submap_keyframes_    = 10;:
   double voxel_res_            = 0.1;
   double loop_detection_radius_;
   double loop_detection_timediff_threshold_;
