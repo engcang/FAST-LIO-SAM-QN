@@ -3,217 +3,217 @@
 
 PosePcd::PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in)
 {
-  tf::Quaternion q_(odom_in.pose.pose.orientation.x, odom_in.pose.pose.orientation.y, odom_in.pose.pose.orientation.z, odom_in.pose.pose.orientation.w);
-  tf::Matrix3x3 m_(q_);
-  Eigen::Matrix3d tmp_rot_mat_;
-  tf::matrixTFToEigen(m_, tmp_rot_mat_);
-  pose_eig.block<3, 3>(0, 0) = tmp_rot_mat_;
+  tf::Quaternion q(odom_in.pose.pose.orientation.x, odom_in.pose.pose.orientation.y, odom_in.pose.pose.orientation.z, odom_in.pose.pose.orientation.w);
+  tf::Matrix3x3 rot_mat_tf(q);
+  Eigen::Matrix3d rot_mat_eig;
+  tf::matrixTFToEigen(rot_mat_tf, rot_mat_eig);
+  pose_eig.block<3, 3>(0, 0) = rot_mat_eig;
   pose_eig(0, 3) = odom_in.pose.pose.position.x;
   pose_eig(1, 3) = odom_in.pose.pose.position.y;
   pose_eig(2, 3) = odom_in.pose.pose.position.z;
   pose_corrected_eig = pose_eig;
-  pcl::PointCloud<PointType> tmp_pcd_;
-  pcl::fromROSMsg(pcd_in, tmp_pcd_);
-  pcd = transformPcd(tmp_pcd_, pose_eig.inverse()); //FAST-LIO publish data in world frame, so save it in LiDAR frame
+  pcl::PointCloud<PointType> tmp_pcd;
+  pcl::fromROSMsg(pcd_in, tmp_pcd);
+  pcd = transformPcd(tmp_pcd, pose_eig.inverse()); //FAST-LIO publish data in world frame, so save it in LiDAR frame
   timestamp = odom_in.header.stamp.toSec();
   idx = idx_in;
 }
 
-FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : m_nh(n_private)
+FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : nh_(n_private)
 {
   ////// ROS params
+  double loop_update_hz, vis_hz;
   auto & gc = lc_config_.gicp_config_;
   auto & qc = lc_config_.quatro_config_;
   /* basic */
-  m_nh.param<std::string>("/basic/map_frame", m_map_frame, "map");
-  m_nh.param<double>("/basic/loop_update_hz", loop_update_hz_, 1.0);
-  m_nh.param<double>("/basic/vis_hz", vis_hz_, 0.5);
-  m_nh.param<double>("/save_voxel_resolution", m_voxel_res, 0.3);
-  m_nh.param<double>("/quatro_nano_gicp_voxel_resolution", lc_config_.voxel_res_, 0.3);
+  nh_.param<std::string>("/basic/map_frame", map_frame_, "map");
+  nh_.param<double>("/basic/loop_update_hz", loop_update_hz, 1.0);
+  nh_.param<double>("/basic/vis_hz", vis_hz, 0.5);
+  nh_.param<double>("/save_voxel_resolution", voxel_res_, 0.3);
+  nh_.param<double>("/quatro_nano_gicp_voxel_resolution", lc_config_.voxel_res_, 0.3);
   /* keyframe */
-  m_nh.param<double>("/keyframe/keyframe_threshold", m_keyframe_thr, 1.0);
-  m_nh.param<int>("/keyframe/num_submap_keyframes", lc_config_.num_submap_keyframes_, 5);
-  m_nh.param<bool>("/keyframe/enable_submap_matching", lc_config_.enable_submap_matching_, false);
+  nh_.param<double>("/keyframe/keyframe_threshold", keyframe_thr_, 1.0);
+  nh_.param<int>("/keyframe/nusubmap_keyframes", lc_config_.num_submap_keyframes_, 5);
+  nh_.param<bool>("/keyframe/enable_submap_matching", lc_config_.enable_submap_matching_, false);
   /* loop */
-  m_nh.param<double>("/loop/loop_detection_radius", lc_config_.loop_detection_radius_, 15.0);
-  m_nh.param<double>("/loop/loop_detection_timediff_threshold", lc_config_.loop_detection_timediff_threshold_, 10.0);
+  nh_.param<double>("/loop/loop_detection_radius", lc_config_.loop_detection_radius_, 15.0);
+  nh_.param<double>("/loop/loop_detection_timediff_threshold", lc_config_.loop_detection_timediff_threshold_, 10.0);
   /* nano (GICP config) */
-  m_nh.param<int>("/nano_gicp/thread_number", gc.nano_thread_number_, 0);
-  m_nh.param<double>("/nano_gicp/icp_score_threshold", gc.icp_score_thr_, 10.0);
-  m_nh.param<int>("/nano_gicp/correspondences_number", gc.nano_correspondences_number_, 15);
-  m_nh.param<int>("/nano_gicp/max_iter", gc.nano_max_iter_, 32);
-  m_nh.param<double>("/nano_gicp/transformation_epsilon", gc.transformation_epsilon_, 0.01);
-  m_nh.param<double>("/nano_gicp/euclidean_fitness_epsilon", gc.euclidean_fitness_epsilon_, 0.01);
-  m_nh.param<int>("/nano_gicp/ransac/max_iter", gc.nano_ransac_max_iter_, 5);
-  m_nh.param<double>("/nano_gicp/ransac/outlier_rejection_threshold", gc.ransac_outlier_rejection_threshold_, 1.0);
+  nh_.param<int>("/nano_gicp/thread_number", gc.nano_thread_number_, 0);
+  nh_.param<double>("/nano_gicp/icp_score_threshold", gc.icp_score_thr_, 10.0);
+  nh_.param<int>("/nano_gicp/correspondences_number", gc.nano_correspondences_number_, 15);
+  nh_.param<int>("/nano_gicp/max_iter", gc.nano_max_iter_, 32);
+  nh_.param<double>("/nano_gicp/transformation_epsilon", gc.transformation_epsilon_, 0.01);
+  nh_.param<double>("/nano_gicp/euclidean_fitness_epsilon", gc.euclidean_fitness_epsilon_, 0.01);
+  nh_.param<int>("/nano_gicp/ransac/max_iter", gc.nano_ransac_max_iter_, 5);
+  nh_.param<double>("/nano_gicp/ransac/outlier_rejection_threshold", gc.ransac_outlier_rejection_threshold_, 1.0);
   /* quatro (Quatro config) */
-  m_nh.param<bool>("/quatro/enable", lc_config_.enable_quatro_, false);
-  m_nh.param<bool>("/quatro/optimize_matching", qc.use_optimized_matching_, true);
-  m_nh.param<double>("/quatro/distance_threshold", qc.quatro_distance_threshold_, 30.0);
-  m_nh.param<int>("/quatro/max_num_correspondences", qc.quatro_max_num_corres_, 200);
-  m_nh.param<double>("/quatro/fpfh_normal_radius", qc.fpfh_normal_radius_, 0.3);
-  m_nh.param<double>("/quatro/fpfh_radius", qc.fpfh_radius_, 0.5);
-  m_nh.param<bool>("/quatro/estimating_scale", qc.estimat_scale_, false);
-  m_nh.param<double>("/quatro/noise_bound", qc.noise_bound_, 0.3);
-  m_nh.param<double>("/quatro/rotation/gnc_factor", qc.rot_gnc_factor_, 1.4);
-  m_nh.param<double>("/quatro/rotation/rot_cost_diff_threshold", qc.rot_cost_diff_thr_, 0.0001);
-  m_nh.param<int>("/quatro/rotation/num_max_iter", qc.quatro_max_iter_, 50);
+  nh_.param<bool>("/quatro/enable", lc_config_.enable_quatro_, false);
+  nh_.param<bool>("/quatro/optimize_matching", qc.use_optimized_matching_, true);
+  nh_.param<double>("/quatro/distance_threshold", qc.quatro_distance_threshold_, 30.0);
+  nh_.param<int>("/quatro/max_nucorrespondences", qc.quatro_max_num_corres_, 200);
+  nh_.param<double>("/quatro/fpfh_normal_radius", qc.fpfh_normal_radius_, 0.3);
+  nh_.param<double>("/quatro/fpfh_radius", qc.fpfh_radius_, 0.5);
+  nh_.param<bool>("/quatro/estimating_scale", qc.estimat_scale_, false);
+  nh_.param<double>("/quatro/noise_bound", qc.noise_bound_, 0.3);
+  nh_.param<double>("/quatro/rotation/gnc_factor", qc.rot_gnc_factor_, 1.4);
+  nh_.param<double>("/quatro/rotation/rot_cost_diff_threshold", qc.rot_cost_diff_thr_, 0.0001);
+  nh_.param<int>("/quatro/rotation/numax_iter", qc.quatro_max_iter_, 50);
   /* results */
-  m_nh.param<bool>("/result/save_map_bag", m_save_map_bag, false);
-  m_nh.param<bool>("/result/save_map_pcd", m_save_map_pcd, false);
-  m_nh.param<bool>("/result/save_in_kitti_format", m_save_in_kitti_format, false);
-  m_nh.param<std::string>("/result/seq_name", m_seq_name, "");
+  nh_.param<bool>("/result/save_map_bag", save_map_bag_, false);
+  nh_.param<bool>("/result/save_map_pcd", save_map_pcd_, false);
+  nh_.param<bool>("/result/save_in_kitti_format", save_in_kitti_format_, false);
+  nh_.param<std::string>("/result/seq_name", seq_name_, "");
   loop_closure_.reset(new LoopClosure(lc_config_));
   /* Initialization of GTSAM */
   gtsam::ISAM2Params isam_params_;
   isam_params_.relinearizeThreshold = 0.01;
   isam_params_.relinearizeSkip = 1;
-  m_isam_handler = std::make_shared<gtsam::ISAM2>(isam_params_);
-  m_odom_path.header.frame_id = m_map_frame;
-  m_corrected_path.header.frame_id = m_map_frame;
-  m_package_path = ros::package::getPath("fast_lio_sam_qn");
-  m_odom_pub = m_nh.advertise<sensor_msgs::PointCloud2>("/ori_odom", 10, true);
-  m_path_pub = m_nh.advertise<nav_msgs::Path>("/ori_path", 10, true);
-  m_corrected_odom_pub = m_nh.advertise<sensor_msgs::PointCloud2>("/corrected_odom", 10, true);
-  m_corrected_path_pub = m_nh.advertise<nav_msgs::Path>("/corrected_path", 10, true);
-  m_corrected_pcd_map_pub = m_nh.advertise<sensor_msgs::PointCloud2>("/corrected_map", 10, true);
-  m_corrected_current_pcd_pub = m_nh.advertise<sensor_msgs::PointCloud2>("/corrected_current_pcd", 10, true);
-  m_loop_detection_pub = m_nh.advertise<visualization_msgs::Marker>("/loop_detection", 10, true);
-  m_realtime_pose_pub = m_nh.advertise<geometry_msgs::PoseStamped>("/pose_stamped", 10);
-  m_debug_src_pub = m_nh.advertise<sensor_msgs::PointCloud2>("/src", 10, true);
-  m_debug_dst_pub = m_nh.advertise<sensor_msgs::PointCloud2>("/dst", 10, true);
-  m_debug_coarse_aligned_pub = m_nh.advertise<sensor_msgs::PointCloud2>("/coarse_aligned_quatro", 10, true);
-  m_debug_fine_aligned_pub = m_nh.advertise<sensor_msgs::PointCloud2>("/fine_aligned_nano_gicp", 10, true);
-  m_sub_odom = std::make_shared<message_filters::Subscriber<nav_msgs::Odometry>>(m_nh, "/Odometry", 10);
-  m_sub_pcd = std::make_shared<message_filters::Subscriber<sensor_msgs::PointCloud2>>(m_nh, "/cloud_registered", 10);
-  m_sub_odom_pcd_sync = std::make_shared<message_filters::Synchronizer<odom_pcd_sync_pol>>(odom_pcd_sync_pol(10), *m_sub_odom, *m_sub_pcd);
-  m_sub_odom_pcd_sync->registerCallback(boost::bind(&FastLioSamQn::odomPcdCallback, this, _1, _2));
-  m_sub_save_flag = m_nh.subscribe("/save_dir", 1, &FastLioSamQn::saveFlagCallback, this);
-  m_loop_timer = m_nh.createTimer(ros::Duration(1/loop_update_hz_), &FastLioSamQn::loopTimerFunc, this);
-  m_vis_timer = m_nh.createTimer(ros::Duration(1/vis_hz_), &FastLioSamQn::visTimerFunc, this);
-
+  isam_handler_ = std::make_shared<gtsam::ISAM2>(isam_params_);
   /* ROS things */
+  odom_path_.header.frame_id = map_frame_;
+  corrected_path_.header.frame_id = map_frame_;
+  package_path_ = ros::package::getPath("fast_lio_saqn");
   /* publishers */
+  odom_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/ori_odom", 10, true);
+  path_pub_ = nh_.advertise<nav_msgs::Path>("/ori_path", 10, true);
+  corrected_odom_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/corrected_odom", 10, true);
+  corrected_path_pub_ = nh_.advertise<nav_msgs::Path>("/corrected_path", 10, true);
+  corrected_pcd_map_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/corrected_map", 10, true);
+  corrected_current_pcd_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/corrected_current_pcd", 10, true);
+  loop_detection_pub_ = nh_.advertise<visualization_msgs::Marker>("/loop_detection", 10, true);
+  realtime_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/pose_stamped", 10);
+  debug_src_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/src", 10, true);
+  debug_dst_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/dst", 10, true);
+  debug_coarse_aligned_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/coarse_aligned_quatro", 10, true);
+  debug_fine_aligned_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/fine_aligned_nano_gicp", 10, true);
   /* subscribers */
+  sub_odom_ = std::make_shared<message_filters::Subscriber<nav_msgs::Odometry>>(nh_, "/Odometry", 10);
+  sub_pcd_ = std::make_shared<message_filters::Subscriber<sensor_msgs::PointCloud2>>(nh_, "/cloud_registered", 10);
+  sub_odom_pcd_sync_ = std::make_shared<message_filters::Synchronizer<odom_pcd_sync_pol>>(odom_pcd_sync_pol(10), *sub_odom_, *sub_pcd_);
+  sub_odom_pcd_sync_->registerCallback(boost::bind(&FastLioSamQn::odomPcdCallback, this, _1, _2));
+  sub_save_flag_ = nh_.subscribe("/save_dir", 1, &FastLioSamQn::saveFlagCallback, this);
   /* Timers */
-  ROS_WARN("Main class, starting node...");
+  loop_timer_ = nh_.createTimer(ros::Duration(1/loop_update_hz), &FastLioSamQn::loopTimerFunc, this);
+  vis_timer_ = nh_.createTimer(ros::Duration(1/vis_hz), &FastLioSamQn::visTimerFunc, this);
+  ROS_INFO("Main class, starting node...");
 }
 
 void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, const sensor_msgs::PointCloud2ConstPtr &pcd_msg)
 {
-  Eigen::Matrix4d last_odom_tf_;
-  last_odom_tf_ = m_current_frame.pose_eig; //to calculate delta
-  m_current_frame = PosePcd(*odom_msg, *pcd_msg, m_current_keyframe_idx); //to be checked if keyframe or not
+  Eigen::Matrix4d last_odom_tf;
+  last_odom_tf = current_frame_.pose_eig; //to calculate delta
+  current_frame_ = PosePcd(*odom_msg, *pcd_msg, current_keyframe_idx_); //to be checked if keyframe or not
 
-  if (!m_init) //// init only once
+  if (!init_) //// init only once
   {
     //others
-    m_keyframes.push_back(m_current_frame);
-    updateVisVars(m_current_frame);
-    m_corrected_current_pcd_pub.publish(pclToPclRos(m_current_frame.pcd, m_map_frame));
+    keyframes_.push_back(current_frame_);
+    updateVisVars(current_frame_);
+    corrected_current_pcd_pub_.publish(pclToPclRos(current_frame_.pcd, map_frame_));
     //graph
-    gtsam::noiseModel::Diagonal::shared_ptr prior_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4).finished()); // rad*rad, meter*meter
-    m_gtsam_graph.add(gtsam::PriorFactor<gtsam::Pose3>(0, poseEigToGtsamPose(m_current_frame.pose_eig), prior_noise_));
-    m_init_esti.insert(m_current_keyframe_idx, poseEigToGtsamPose(m_current_frame.pose_eig));
+    gtsam::noiseModel::Diagonal::shared_ptr prior_noise = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4).finished()); // rad*rad, meter*meter
+    gtsam_graph_.add(gtsam::PriorFactor<gtsam::Pose3>(0, poseEigToGtsamPose(current_frame_.pose_eig), prior_noise));
+    init_esti_.insert(current_keyframe_idx_, poseEigToGtsamPose(current_frame_.pose_eig));
     {
-      std::lock_guard<std::mutex> lock(m_realtime_pose_mutex);
-      m_odom_delta = m_odom_delta * last_odom_tf_.inverse() * m_current_frame.pose_eig;
-      m_current_frame.pose_corrected_eig = m_last_corrected_pose * m_odom_delta;
-      geometry_msgs::PoseStamped current_pose_stamped_ = poseEigToPoseStamped(m_current_frame.pose_corrected_eig, m_map_frame);
-      m_realtime_pose_pub.publish(current_pose_stamped_);
+      std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
+      odom_delta_ = odom_delta_ * last_odom_tf.inverse() * current_frame_.pose_eig;
+      current_frame_.pose_corrected_eig = last_corrected_pose_ * odom_delta_;
+      geometry_msgs::PoseStamped current_pose_stamped_ = poseEigToPoseStamped(current_frame_.pose_corrected_eig, map_frame_);
+      realtime_pose_pub_.publish(current_pose_stamped_);
       tf::Transform transform_;
       transform_.setOrigin(tf::Vector3(current_pose_stamped_.pose.position.x, current_pose_stamped_.pose.position.y, current_pose_stamped_.pose.position.z));
       transform_.setRotation(tf::Quaternion(current_pose_stamped_.pose.orientation.x, current_pose_stamped_.pose.orientation.y, current_pose_stamped_.pose.orientation.z, current_pose_stamped_.pose.orientation.w));
-      m_broadcaster.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), m_map_frame, "robot"));
+      broadcaster_.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), map_frame_, "robot"));
     }
-    m_current_keyframe_idx++;
-    m_init = true;
+    current_keyframe_idx_++;
+    init_ = true;
   }
   else
   {
     //// 1. realtime pose = last corrected odom * delta (last -> current)
     high_resolution_clock::time_point t1_ = high_resolution_clock::now();
     {
-      std::lock_guard<std::mutex> lock(m_realtime_pose_mutex);
-      m_odom_delta = m_odom_delta * last_odom_tf_.inverse() * m_current_frame.pose_eig;
-      m_current_frame.pose_corrected_eig = m_last_corrected_pose * m_odom_delta;
-      geometry_msgs::PoseStamped current_pose_stamped_ = poseEigToPoseStamped(m_current_frame.pose_corrected_eig, m_map_frame);
-      m_realtime_pose_pub.publish(current_pose_stamped_);
+      std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
+      odom_delta_ = odom_delta_ * last_odom_tf.inverse() * current_frame_.pose_eig;
+      current_frame_.pose_corrected_eig = last_corrected_pose_ * odom_delta_;
+      geometry_msgs::PoseStamped current_pose_stamped_ = poseEigToPoseStamped(current_frame_.pose_corrected_eig, map_frame_);
+      realtime_pose_pub_.publish(current_pose_stamped_);
       tf::Transform transform_;
       transform_.setOrigin(tf::Vector3(current_pose_stamped_.pose.position.x, current_pose_stamped_.pose.position.y, current_pose_stamped_.pose.position.z));
       transform_.setRotation(tf::Quaternion(current_pose_stamped_.pose.orientation.x,
                                             current_pose_stamped_.pose.orientation.y,
                                             current_pose_stamped_.pose.orientation.z,
                                             current_pose_stamped_.pose.orientation.w));
-      m_broadcaster.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), m_map_frame, "robot"));
+      broadcaster_.sendTransform(tf::StampedTransform(transform_, ros::Time::now(), map_frame_, "robot"));
     }
     // pub current scan in corrected pose frame
-    m_corrected_current_pcd_pub.publish(pclToPclRos(transformPcd(m_current_frame.pcd, m_current_frame.pose_corrected_eig), m_map_frame));
+    corrected_current_pcd_pub_.publish(pclToPclRos(transformPcd(current_frame_.pcd, current_frame_.pose_corrected_eig), map_frame_));
 
     //// 2. check if keyframe
     high_resolution_clock::time_point t2_ = high_resolution_clock::now();
-    if (checkIfKeyframe(m_current_frame, m_keyframes.back()))
+    if (checkIfKeyframe(current_frame_, keyframes_.back()))
     {
       // 2-2. if so, save
       {
-        std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-        m_keyframes.push_back(m_current_frame);
-        m_not_processed_keyframe = m_current_frame; //to check loop in another thread        
+        std::lock_guard<std::mutex> lock(keyframes_mutex_);
+        keyframes_.push_back(current_frame_);
+        not_processed_keyframe_ = current_frame_; //to check loop in another thread        
       }
       // 2-3. if so, add to graph
-      gtsam::noiseModel::Diagonal::shared_ptr odom_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6)
+      gtsam::noiseModel::Diagonal::shared_ptr odom_noise = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6)
                                                                                                     << 1e-4, 1e-4, 1e-4, 1e-2, 1e-2, 1e-2).finished());
-      gtsam::Pose3 pose_from_ = poseEigToGtsamPose(m_keyframes[m_current_keyframe_idx-1].pose_corrected_eig);
-      gtsam::Pose3 pose_to_ = poseEigToGtsamPose(m_current_frame.pose_corrected_eig);
+      gtsam::Pose3 pose_from = poseEigToGtsamPose(keyframes_[current_keyframe_idx_-1].pose_corrected_eig);
+      gtsam::Pose3 pose_to = poseEigToGtsamPose(current_frame_.pose_corrected_eig);
       {
-        std::lock_guard<std::mutex> lock(m_graph_mutex);
-        m_gtsam_graph.add(gtsam::BetweenFactor<gtsam::Pose3>(m_current_keyframe_idx-1, m_current_keyframe_idx, pose_from_.between(pose_to_), odom_noise_));
-        m_init_esti.insert(m_current_keyframe_idx, pose_to_);
+        std::lock_guard<std::mutex> lock(graph_mutex_);
+        gtsam_graph_.add(gtsam::BetweenFactor<gtsam::Pose3>(current_keyframe_idx_-1, current_keyframe_idx_, pose_from.between(pose_to), odom_noise));
+        init_esti_.insert(current_keyframe_idx_, pose_to);
       }
-      m_current_keyframe_idx++;
+      current_keyframe_idx_++;
 
       //// 3. vis
       high_resolution_clock::time_point t3_ = high_resolution_clock::now();
       {
-        std::lock_guard<std::mutex> lock(m_vis_mutex);
-        updateVisVars(m_current_frame);
+        std::lock_guard<std::mutex> lock(vis_mutex_);
+        updateVisVars(current_frame_);
       }
 
       //// 4. optimize with graph
       high_resolution_clock::time_point t4_ = high_resolution_clock::now();
-      // m_corrected_esti = gtsam::LevenbergMarquardtOptimizer(m_gtsam_graph, m_init_esti).optimize(); // cf. isam.update vs values.LM.optimize
+      // m_corrected_esti = gtsam::LevenbergMarquardtOptimizer(m_gtsam_graph, init_esti_).optimize(); // cf. isam.update vs values.LM.optimize
       {
-        std::lock_guard<std::mutex> lock(m_graph_mutex);
-        m_isam_handler->update(m_gtsam_graph, m_init_esti);
-        m_isam_handler->update();
-        if (m_loop_added_flag) //https://github.com/TixiaoShan/LIO-SAM/issues/5#issuecomment-653752936
+        std::lock_guard<std::mutex> lock(graph_mutex_);
+        isam_handler_->update(gtsam_graph_, init_esti_);
+        isam_handler_->update();
+        if (loop_added_flag_) //https://github.com/TixiaoShan/LIO-SAM/issues/5#issuecomment-653752936
         {
-          m_isam_handler->update();
-          m_isam_handler->update();
-          m_isam_handler->update();
+          isam_handler_->update();
+          isam_handler_->update();
+          isam_handler_->update();
         }
-        m_gtsam_graph.resize(0);
-        m_init_esti.clear();
+        gtsam_graph_.resize(0);
+        init_esti_.clear();
       }
 
       //// 5. handle corrected results
       // get corrected poses and reset odom delta (for realtime pose pub)
       high_resolution_clock::time_point t5_ = high_resolution_clock::now();
       {
-        std::lock_guard<std::mutex> lock(m_realtime_pose_mutex);
-        m_corrected_esti = m_isam_handler->calculateEstimate();
-        m_last_corrected_pose = gtsamPoseToPoseEig(m_corrected_esti.at<gtsam::Pose3>(m_corrected_esti.size()-1));
-        m_odom_delta = Eigen::Matrix4d::Identity();
+        std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
+        corrected_esti_ = isam_handler_->calculateEstimate();
+        last_corrected_pose_ = gtsamPoseToPoseEig(corrected_esti_.at<gtsam::Pose3>(corrected_esti_.size()-1));
+        odom_delta_ = Eigen::Matrix4d::Identity();
       }
       // correct poses in keyframes
-      if (m_loop_added_flag)
+      if (loop_added_flag_)
       {
-        std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-        for (size_t i = 0; i < m_corrected_esti.size(); ++i)
+        std::lock_guard<std::mutex> lock(keyframes_mutex_);
+        for (size_t i = 0; i < corrected_esti_.size(); ++i)
         {
-          m_keyframes[i].pose_corrected_eig = gtsamPoseToPoseEig(m_corrected_esti.at<gtsam::Pose3>(i));
+          keyframes_[i].pose_corrected_eig = gtsamPoseToPoseEig(corrected_esti_.at<gtsam::Pose3>(i));
         }
-        m_loop_added_flag = false;
+        loop_added_flag_ = false;
       }
       high_resolution_clock::time_point t6_ = high_resolution_clock::now();
 
@@ -228,26 +228,26 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
 
 void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
 {
-  if (!m_init) return;
+  if (!init_) return;
 
   //// 1. copy keyframes and not processed keyframes
-  high_resolution_clock::time_point t1_ = high_resolution_clock::now();
-  PosePcd not_proc_key_copy_;
-  std::vector<PosePcd> keyframes_copy_;
+  high_resolution_clock::time_point t1 = high_resolution_clock::now();
+  PosePcd not_proc_key_copied;
+  std::vector<PosePcd> keyframes_copied;
   {
-    std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-    if (!m_not_processed_keyframe.processed)
+    std::lock_guard<std::mutex> lock(keyframes_mutex_);
+    if (!not_processed_keyframe_.processed)
     {
-      not_proc_key_copy_ = m_not_processed_keyframe;
-      m_not_processed_keyframe.processed = true;
-      keyframes_copy_ = m_keyframes;
+      not_proc_key_copied = not_processed_keyframe_;
+      not_processed_keyframe_.processed = true;
+      keyframes_copied = keyframes_;
     }
   }
-  if (not_proc_key_copy_.idx == 0 || not_proc_key_copy_.processed || keyframes_copy_.empty()) return; //already processed
+  if (not_proc_key_copied.idx == 0 || not_proc_key_copied.processed || keyframes_copied.empty()) return; //already processed
 
   //// 2. detect loop and add to graph
-  high_resolution_clock::time_point t2_ = high_resolution_clock::now();
-  const RegistrationOutput &reg_output = loop_closure_->retrieveLoopClosureMeasurement(not_proc_key_copy_, keyframes_copy_);
+  high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  const RegistrationOutput &reg_output = loop_closure_->retrieveLoopClosureMeasurement(not_proc_key_copied, keyframes_copied);
   const int closest_keyframe_idx = loop_closure_->getClosestKeyframeidx();
 
   if (closest_keyframe_idx < 0) return;
@@ -255,144 +255,143 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
   if (reg_output.is_valid_)
   {
     ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score_, "\033[0m");
-    const auto &score_ = reg_output.score_;
-    gtsam::Pose3 pose_from_ = poseEigToGtsamPose(reg_output.pose_between_eig_ * not_proc_key_copy_.pose_corrected_eig); //IMPORTANT: take care of the order
-    gtsam::Pose3 pose_to_ = poseEigToGtsamPose(keyframes_copy_[closest_keyframe_idx].pose_corrected_eig);
-    gtsam::noiseModel::Diagonal::shared_ptr loop_noise_ = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score_, score_, score_, score_, score_, score_).finished());
+    const auto &score = reg_output.score_;
+    gtsam::Pose3 pose_from = poseEigToGtsamPose(reg_output.pose_between_eig_ * not_proc_key_copied.pose_corrected_eig); //IMPORTANT: take care of the order
+    gtsam::Pose3 pose_to = poseEigToGtsamPose(keyframes_copied[closest_keyframe_idx].pose_corrected_eig);
+    gtsam::noiseModel::Diagonal::shared_ptr loop_noise = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score, score, score, score, score, score).finished());
     {
-      std::lock_guard<std::mutex> lock(m_graph_mutex);
-      m_gtsam_graph.add(gtsam::BetweenFactor<gtsam::Pose3>(not_proc_key_copy_.idx, closest_keyframe_idx, pose_from_.between(pose_to_), loop_noise_));
+      std::lock_guard<std::mutex> lock(graph_mutex_);
+      gtsam_graph_.add(gtsam::BetweenFactor<gtsam::Pose3>(not_proc_key_copied.idx, closest_keyframe_idx, pose_from.between(pose_to), loop_noise));
     }
-    m_loop_idx_pairs.push_back({not_proc_key_copy_.idx, closest_keyframe_idx}); //for vis
+    loop_idx_pairs_.push_back({not_proc_key_copied.idx, closest_keyframe_idx}); //for vis
 
-    m_loop_added_flag_vis = true;
-    m_loop_added_flag = true;
+    loop_added_flag_vis_ = true;
+    loop_added_flag_ = true;
   }
   else 
   { 
       ROS_WARN("Loop closure rejected. Score: %.3f", reg_output.score_);
   }
   
-  high_resolution_clock::time_point t3_ = high_resolution_clock::now();
+  high_resolution_clock::time_point t3 = high_resolution_clock::now();
 
-  m_debug_src_pub.publish(pclToPclRos(loop_closure_->getSourceCloud(), m_map_frame));
-  m_debug_dst_pub.publish(pclToPclRos(loop_closure_->getTargetCloud(), m_map_frame));
-  m_debug_fine_aligned_pub.publish(pclToPclRos(loop_closure_->getFinalAlignedCloud(), m_map_frame));
-  m_debug_coarse_aligned_pub.publish(pclToPclRos(loop_closure_->getCoarseAlignedCloud(), m_map_frame));
+  debug_src_pub_.publish(pclToPclRos(loop_closure_->getSourceCloud(), map_frame_));
+  debug_dst_pub_.publish(pclToPclRos(loop_closure_->getTargetCloud(), map_frame_));
+  debug_fine_aligned_pub_.publish(pclToPclRos(loop_closure_->getFinalAlignedCloud(), map_frame_));
+  debug_coarse_aligned_pub_.publish(pclToPclRos(loop_closure_->getCoarseAlignedCloud(), map_frame_));
 
-  ROS_INFO("copy: %.1f, loop: %.1f", duration_cast<microseconds>(t2_-t1_).count()/1e3, duration_cast<microseconds>(t3_-t2_).count()/1e3);
+  ROS_INFO("copy: %.1f, loop: %.1f", duration_cast<microseconds>(t2 - t1).count() / 1e3, duration_cast<microseconds>(t3 - t2).count() / 1e3);
   return;
 }
 
 void FastLioSamQn::visTimerFunc(const ros::TimerEvent& event)
 {
-  if (!m_init) return;
+  if (!init_) return;
 
-  high_resolution_clock::time_point tv1_ = high_resolution_clock::now();
+  high_resolution_clock::time_point tv1 = high_resolution_clock::now();
   //// 1. if loop closed, correct vis data
-  if (m_loop_added_flag_vis) 
+  if (loop_added_flag_vis_) 
+  // copy and ready
   {
-    // copy and ready
-    gtsam::Values corrected_esti_copy_;
-    pcl::PointCloud<pcl::PointXYZ> corrected_odoms_;
-    nav_msgs::Path corrected_path_;
+    gtsam::Values corrected_esti_copied;
+    pcl::PointCloud<pcl::PointXYZ> corrected_odoms;
+    nav_msgs::Path corrected_path;
     {
-      std::lock_guard<std::mutex> lock(m_realtime_pose_mutex);
-      corrected_esti_copy_ = m_corrected_esti;
+      std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
+      corrected_esti_copied = corrected_esti_;
     }
     // correct pose and path
-    for (size_t i = 0; i < corrected_esti_copy_.size(); ++i)
+    for (size_t i = 0; i < corrected_esti_copied.size(); ++i)
     {
-      gtsam::Pose3 pose_ = corrected_esti_copy_.at<gtsam::Pose3>(i);
-      corrected_odoms_.points.emplace_back(pose_.translation().x(), pose_.translation().y(), pose_.translation().z());
-      corrected_path_.poses.push_back(gtsamPoseToPoseStamped(pose_, m_map_frame));
+      gtsam::Pose3 pose_ = corrected_esti_copied.at<gtsam::Pose3>(i);
+      corrected_odoms.points.emplace_back(pose_.translation().x(), pose_.translation().y(), pose_.translation().z());
+      corrected_path.poses.push_back(gtsamPoseToPoseStamped(pose_, map_frame_));
     }
     // update vis of loop constraints
-    if (!m_loop_idx_pairs.empty())
+    if (!loop_idx_pairs_.empty())
     {
-      m_loop_detection_pub.publish(getLoopMarkers(corrected_esti_copy_));
+      loop_detection_pub_.publish(getLoopMarkers(corrected_esti_copied));
     }
     // update with corrected data
     {
-      std::lock_guard<std::mutex> lock(m_vis_mutex);
-      m_corrected_odoms = corrected_odoms_;
-      m_corrected_path.poses = corrected_path_.poses;
+      std::lock_guard<std::mutex> lock(vis_mutex_);
+      corrected_odoms_ = corrected_odoms;
+      corrected_path_.poses = corrected_path.poses;
     }
-    m_loop_added_flag_vis = false;
+    loop_added_flag_vis_ = false;
   }
-
   //// 2. publish odoms, paths
   {
-    std::lock_guard<std::mutex> lock(m_vis_mutex);
-    m_odom_pub.publish(pclToPclRos(m_odoms, m_map_frame));
-    m_path_pub.publish(m_odom_path);
-    m_corrected_odom_pub.publish(pclToPclRos(m_corrected_odoms, m_map_frame));
-    m_corrected_path_pub.publish(m_corrected_path);
+    std::lock_guard<std::mutex> lock(vis_mutex_);
+    odom_pub_.publish(pclToPclRos(odoms_, map_frame_));
+    path_pub_.publish(odom_path_);
+    corrected_odom_pub_.publish(pclToPclRos(corrected_odoms_, map_frame_));
+    corrected_path_pub_.publish(corrected_path_);
   }
 
   //// 3. global map
-  if (m_global_map_vis_switch && m_corrected_pcd_map_pub.getNumSubscribers() > 0) //save time, only once
+  if (global_map_vis_switch_ && corrected_pcd_map_pub_.getNumSubscribers() > 0) //save time, only once
   {
     pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
     {
-      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (size_t i = 0; i < m_keyframes.size(); ++i)
+      std::lock_guard<std::mutex> lock(keyframes_mutex_);
+      for (size_t i = 0; i < keyframes_.size(); ++i)
       {
-        *corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+        *corrected_map += transformPcd(keyframes_[i].pcd, keyframes_[i].pose_corrected_eig);
       }
     }
-    const auto &voxelized_map = voxelizePcd(corrected_map, m_voxel_res);
-    m_corrected_pcd_map_pub.publish(pclToPclRos(*voxelized_map, m_map_frame));
-    m_global_map_vis_switch = false;
+    const auto &voxelized_map = voxelizePcd(corrected_map, voxel_res_);
+    corrected_pcd_map_pub_.publish(pclToPclRos(*voxelized_map, map_frame_));
+    global_map_vis_switch_ = false;
   }
-  if (!m_global_map_vis_switch && m_corrected_pcd_map_pub.getNumSubscribers() == 0)
+  if (!global_map_vis_switch_ && corrected_pcd_map_pub_.getNumSubscribers() == 0)
   {
-    m_global_map_vis_switch = true;      
+    global_map_vis_switch_ = true;      
   }
-  high_resolution_clock::time_point tv2_ = high_resolution_clock::now();
-  ROS_INFO("vis: %.1fms", duration_cast<microseconds>(tv2_-tv1_).count()/1e3);
+  high_resolution_clock::time_point tv2 = high_resolution_clock::now();
+  ROS_INFO("vis: %.1fms", duration_cast<microseconds>(tv2 - tv1).count()/1e3);
   return;
 }
 
 void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
 {
-  std::string save_dir_ = msg->data != "" ? msg->data : m_package_path;
+  std::string save_dir = msg->data != "" ? msg->data : package_path_;
 
   // save scans as individual pcd files and poses in KITTI format
   // Delete the scans folder if it exists and create a new one
-  std::string seq_directory_   = save_dir_ + "/" + m_seq_name;
-  std::string scans_directory_ = seq_directory_ + "/scans";
-  if (m_save_in_kitti_format)
+  std::string seq_directory   = save_dir + "/" + seq_name_;
+  std::string scans_directory = seq_directory + "/scans";
+  if (save_in_kitti_format_)
   {
-    std::cout << "\033[32;1mScans are saved in " << scans_directory_ << ", following the KITTI and TUM format\033[0m" << std::endl;
-    if (fs::exists(seq_directory_))
+    std::cout << "\033[32;1mScans are saved in " << scans_directory << ", following the KITTI and TUM format\033[0m" << std::endl;
+    if (fs::exists(seq_directory))
     {
-      fs::remove_all(seq_directory_);
+      fs::remove_all(seq_directory);
     }
-    fs::create_directories(scans_directory_);
+    fs::create_directories(scans_directory);
 
-    std::ofstream kitti_pose_file_(seq_directory_ + "/poses_kitti.txt");
-    std::ofstream tum_pose_file_(seq_directory_ + "/poses_tum.txt");
-    tum_pose_file_ << "#timestamp x y z qx qy qz qw\n";
+    std::ofstream kitti_pose_file(seq_directory + "/poses_kitti.txt");
+    std::ofstream tum_pose_file(seq_directory + "/poses_tum.txt");
+    tum_pose_file << "#timestamp x y z qx qy qz qw\n";
     {
-      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (size_t i = 0; i < m_keyframes.size(); ++i)
+      std::lock_guard<std::mutex> lock(keyframes_mutex_);
+      for (size_t i = 0; i < keyframes_.size(); ++i)
       {
         // Save the point cloud
         std::stringstream ss_;
-        ss_ << scans_directory_ << "/" << std::setw(6) << std::setfill('0') << i << ".pcd";
+        ss_ << scans_directory << "/" << std::setw(6) << std::setfill('0') << i << ".pcd";
         std::cout << "Saving " << ss_.str()  << "..." << std::endl;
-        pcl::io::savePCDFileASCII<PointType>(ss_.str(), m_keyframes[i].pcd);
+        pcl::io::savePCDFileASCII<PointType>(ss_.str(), keyframes_[i].pcd);
 
         // Save the pose in KITTI format
-        const auto &pose_ = m_keyframes[i].pose_corrected_eig;
-        kitti_pose_file_ << pose_(0, 0) << " " << pose_(0, 1) << " " << pose_(0, 2) << " " << pose_(0, 3) << " "
+        const auto &pose_ = keyframes_[i].pose_corrected_eig;
+        kitti_pose_file << pose_(0, 0) << " " << pose_(0, 1) << " " << pose_(0, 2) << " " << pose_(0, 3) << " "
                         << pose_(1, 0) << " " << pose_(1, 1) << " " << pose_(1, 2) << " " << pose_(1, 3) << " "
                         << pose_(2, 0) << " " << pose_(2, 1) << " " << pose_(2, 2) << " " << pose_(2, 3) << "\n";
 
-        const auto &lidar_optim_pose_ = poseEigToPoseStamped(m_keyframes[i].pose_corrected_eig);
-        tum_pose_file_ << std::fixed << std::setprecision(8)
-                      << m_keyframes[i].timestamp << " "
+        const auto &lidar_optim_pose_ = poseEigToPoseStamped(keyframes_[i].pose_corrected_eig);
+        tum_pose_file << std::fixed << std::setprecision(8)
+                      << keyframes_[i].timestamp << " "
                       << lidar_optim_pose_.pose.position.x << " "
                       << lidar_optim_pose_.pose.position.y << " "
                       << lidar_optim_pose_.pose.position.z << " "
@@ -402,41 +401,41 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
                       << lidar_optim_pose_.pose.orientation.w << "\n";
       }
     }
-    kitti_pose_file_.close();
-    tum_pose_file_.close();
+    kitti_pose_file.close();
+    tum_pose_file.close();
     std::cout << "\033[32;1mScans and poses saved in .pcd and KITTI format\033[0m" << std::endl;
   }
 
-  if (m_save_map_bag)
+  if (save_map_bag_)
   {
-    rosbag::Bag bag_;
-    bag_.open(m_package_path+"/result.bag", rosbag::bagmode::Write);
+    rosbag::Bag bag;
+    bag.open(package_path_+"/result.bag", rosbag::bagmode::Write);
     {
-      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (size_t i = 0; i < m_keyframes.size(); ++i)
+      std::lock_guard<std::mutex> lock(keyframes_mutex_);
+      for (size_t i = 0; i < keyframes_.size(); ++i)
       {
-        ros::Time time_;
-        time_.fromSec(m_keyframes[i].timestamp);
-        bag_.write("/keyframe_pcd", time_, pclToPclRos(m_keyframes[i].pcd, m_map_frame));
-        bag_.write("/keyframe_pose", time_, poseEigToPoseStamped(m_keyframes[i].pose_corrected_eig));
+        ros::Time time;
+        time.fromSec(keyframes_[i].timestamp);
+        bag.write("/keyframe_pcd", time, pclToPclRos(keyframes_[i].pcd, map_frame_));
+        bag.write("/keyframe_pose", time, poseEigToPoseStamped(keyframes_[i].pose_corrected_eig));
       }
     }
-    bag_.close();
+    bag.close();
     std::cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << std::endl;
   }
 
-  if (m_save_map_pcd)
+  if (save_map_pcd_)
   {
     pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
     {
-      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (size_t i = 0; i < m_keyframes.size(); ++i)
+      std::lock_guard<std::mutex> lock(keyframes_mutex_);
+      for (size_t i = 0; i < keyframes_.size(); ++i)
       {
-        *corrected_map += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+        *corrected_map += transformPcd(keyframes_[i].pcd, keyframes_[i].pose_corrected_eig);
       }
     }
-    const auto &voxelized_map = voxelizePcd(corrected_map, m_voxel_res);
-    pcl::io::savePCDFileASCII<PointType> (seq_directory_ + "/" + m_seq_name + "_map.pcd", *voxelized_map);
+    const auto &voxelized_map = voxelizePcd(corrected_map, voxel_res_);
+    pcl::io::savePCDFileASCII<PointType> (seq_directory + "/" + seq_name_ + "_map.pcd", *voxelized_map);
     cout << "\033[32;1mAccumulated map cloud saved in .pcd format\033[0m" << endl;
   }
 }
@@ -444,69 +443,69 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
 FastLioSamQn::~FastLioSamQn()
 {
   // save map
-  if (m_save_map_bag)
+  if (save_map_bag_)
   {
-    rosbag::Bag bag_;
-    bag_.open(m_package_path+"/result.bag", rosbag::bagmode::Write);
+    rosbag::Bag bag;
+    bag.open(package_path_+"/result.bag", rosbag::bagmode::Write);
     {
-      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (int i = 0; i < m_keyframes.size(); ++i)
+      std::lock_guard<std::mutex> lock(keyframes_mutex_);
+      for (int i = 0; i < keyframes_.size(); ++i)
       {
-        ros::Time time_;
-        time_.fromSec(m_keyframes[i].timestamp);
-        bag_.write("/keyframe_pcd", time_, pclToPclRos(m_keyframes[i].pcd, m_map_frame));
-        bag_.write("/keyframe_pose", time_, poseEigToPoseStamped(m_keyframes[i].pose_corrected_eig));
+        ros::Time time;
+        time.fromSec(keyframes_[i].timestamp);
+        bag.write("/keyframe_pcd", time, pclToPclRos(keyframes_[i].pcd, map_frame_));
+        bag.write("/keyframe_pose", time, poseEigToPoseStamped(keyframes_[i].pose_corrected_eig));
       }
     }
-    bag_.close();
+    bag.close();
     cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << endl;
   }
-  if (m_save_map_pcd)
+  if (save_map_pcd_)
   {
-    pcl::PointCloud<PointType> corrected_map_;
+    pcl::PointCloud<PointType> corrected_map;
     {
-      std::lock_guard<std::mutex> lock(m_keyframes_mutex);
-      for (int i = 0; i < m_keyframes.size(); ++i)
+      std::lock_guard<std::mutex> lock(keyframes_mutex_);
+      for (int i = 0; i < keyframes_.size(); ++i)
       {
-        corrected_map_ += transformPcd(m_keyframes[i].pcd, m_keyframes[i].pose_corrected_eig);
+        corrected_map += transformPcd(keyframes_[i].pcd, keyframes_[i].pose_corrected_eig);
       }
     }
-    pcl::io::savePCDFileASCII<PointType> (m_package_path+"/result.pcd", corrected_map_);
+    pcl::io::savePCDFileASCII<PointType> (package_path_+"/result.pcd", corrected_map);
     cout << "\033[32;1mResult saved in .pcd format!!!\033[0m" << endl;
   }
 }
 
 void FastLioSamQn::updateVisVars(const PosePcd &pose_pcd_in)
 {
-  m_odoms.points.emplace_back(pose_pcd_in.pose_eig(0, 3), pose_pcd_in.pose_eig(1, 3), pose_pcd_in.pose_eig(2, 3));
-  m_corrected_odoms.points.emplace_back(pose_pcd_in.pose_corrected_eig(0, 3), pose_pcd_in.pose_corrected_eig(1, 3), pose_pcd_in.pose_corrected_eig(2, 3));
-  m_odom_path.poses.push_back(poseEigToPoseStamped(pose_pcd_in.pose_eig, m_map_frame));
-  m_corrected_path.poses.push_back(poseEigToPoseStamped(pose_pcd_in.pose_corrected_eig, m_map_frame));
+  odoms_.points.emplace_back(pose_pcd_in.pose_eig(0, 3), pose_pcd_in.pose_eig(1, 3), pose_pcd_in.pose_eig(2, 3));
+  corrected_odoms_.points.emplace_back(pose_pcd_in.pose_corrected_eig(0, 3), pose_pcd_in.pose_corrected_eig(1, 3), pose_pcd_in.pose_corrected_eig(2, 3));
+  odom_path_.poses.push_back(poseEigToPoseStamped(pose_pcd_in.pose_eig, map_frame_));
+  corrected_path_.poses.push_back(poseEigToPoseStamped(pose_pcd_in.pose_corrected_eig, map_frame_));
   return;
 }
 
 visualization_msgs::Marker FastLioSamQn::getLoopMarkers(const gtsam::Values &corrected_esti_in)
 {
-  visualization_msgs::Marker edges_; edges_.type = 5u;
-  edges_.scale.x = 0.12f; edges_.header.frame_id = m_map_frame; edges_.pose.orientation.w = 1.0f;
-  edges_.color.r = 1.0f; edges_.color.g = 1.0f; edges_.color.b = 1.0f; edges_.color.a = 1.0f;
-  for (int i = 0; i < m_loop_idx_pairs.size(); ++i)
+  visualization_msgs::Marker edges; edges.type = 5u;
+  edges.scale.x = 0.12f; edges.header.frame_id = map_frame_; edges.pose.orientation.w = 1.0f;
+  edges.color.r = 1.0f; edges.color.g = 1.0f; edges.color.b = 1.0f; edges.color.a = 1.0f;
+  for (int i = 0; i < loop_idx_pairs_.size(); ++i)
   {
-    if (m_loop_idx_pairs[i].first >= corrected_esti_in.size() || m_loop_idx_pairs[i].second >= corrected_esti_in.size()) continue;
-    gtsam::Pose3 pose_ = corrected_esti_in.at<gtsam::Pose3>(m_loop_idx_pairs[i].first);
-    gtsam::Pose3 pose2_ = corrected_esti_in.at<gtsam::Pose3>(m_loop_idx_pairs[i].second);
-    geometry_msgs::Point p_, p2_;
-    p_.x = pose_.translation().x(); p_.y = pose_.translation().y(); p_.z = pose_.translation().z();
-    p2_.x = pose2_.translation().x(); p2_.y = pose2_.translation().y(); p2_.z = pose2_.translation().z();
-    edges_.points.push_back(p_);
-    edges_.points.push_back(p2_);
+    if (loop_idx_pairs_[i].first >= corrected_esti_in.size() || loop_idx_pairs_[i].second >= corrected_esti_in.size()) continue;
+    gtsam::Pose3 pose = corrected_esti_in.at<gtsam::Pose3>(loop_idx_pairs_[i].first);
+    gtsam::Pose3 pose2 = corrected_esti_in.at<gtsam::Pose3>(loop_idx_pairs_[i].second);
+    geometry_msgs::Point p, p2;
+    p.x = pose.translation().x(); p.y = pose.translation().y(); p.z = pose.translation().z();
+    p2.x = pose2.translation().x(); p2.y = pose2.translation().y(); p2.z = pose2.translation().z();
+    edges.points.push_back(p);
+    edges.points.push_back(p2);
   }
-  return edges_;
+  return edges;
 }
 
 bool FastLioSamQn::checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd)
 {
-  return m_keyframe_thr < (latest_pose_pcd.pose_corrected_eig.block<3, 1>(0, 3) - pose_pcd_in.pose_corrected_eig.block<3, 1>(0, 3)).norm();
+  return keyframe_thr_ < (latest_pose_pcd.pose_corrected_eig.block<3, 1>(0, 3) - pose_pcd_in.pose_corrected_eig.block<3, 1>(0, 3)).norm();
 }
 
 

@@ -7,19 +7,17 @@ LoopClosure::LoopClosure(const LoopClosureConfig &config)
   const auto & gc = config_.gicp_config_;
   const auto & qc = config_.quatro_config_;
   ////// nano_gicp init
-  m_nano_gicp.setNumThreads(gc.nano_thread_number_);
-  m_nano_gicp.setCorrespondenceRandomness(gc.nano_correspondences_number_);
-  m_nano_gicp.setMaximumIterations(gc.nano_max_iter_);
-  m_nano_gicp.setRANSACIterations(gc.nano_ransac_max_iter_);
-  m_nano_gicp.setMaxCorrespondenceDistance(gc.max_corr_dist_);
-  m_nano_gicp.setTransformationEpsilon(gc.transformation_epsilon_);
-  m_nano_gicp.setEuclideanFitnessEpsilon(gc.euclidean_fitness_epsilon_);
-  m_nano_gicp.setRANSACOutlierRejectionThreshold(gc.ransac_outlier_rejection_threshold_);
+  nano_gicp_.setNumThreads(gc.nano_thread_number_);
+  nano_gicp_.setCorrespondenceRandomness(gc.nano_correspondences_number_);
+  nano_gicp_.setMaximumIterations(gc.nano_max_iter_);
+  nano_gicp_.setRANSACIterations(gc.nano_ransac_max_iter_);
+  nano_gicp_.setMaxCorrespondenceDistance(gc.max_corr_dist_);
+  nano_gicp_.setTransformationEpsilon(gc.transformation_epsilon_);
+  nano_gicp_.setEuclideanFitnessEpsilon(gc.euclidean_fitness_epsilon_);
+  nano_gicp_.setRANSACOutlierRejectionThreshold(gc.ransac_outlier_rejection_threshold_);
   ////// quatro init
-  m_quatro_handler = std::make_shared<quatro<PointType>>(qc.fpfh_normal_radius_, qc.fpfh_radius_, qc.noise_bound_, qc.rot_gnc_factor_, qc.rot_cost_diff_thr_,
+  quatro_handler_ = std::make_shared<quatro<PointType>>(qc.fpfh_normal_radius_, qc.fpfh_radius_, qc.noise_bound_, qc.rot_gnc_factor_, qc.rot_cost_diff_thr_,
                                                         qc.quatro_max_iter_, qc.estimat_scale_, qc.use_optimized_matching_, qc.quatro_distance_threshold_, qc.quatro_max_num_corres_);
-
-
   src_cloud_.reset(new pcl::PointCloud<PointType>);
   dst_cloud_.reset(new pcl::PointCloud<PointType>);
 }
@@ -30,7 +28,6 @@ int LoopClosure::fetchClosestKeyframeIdx(const PosePcd &front_keyframe, const st
 {
   const auto &loop_det_radi = config_.loop_detection_radius_;
   const auto &loop_det_tdiff_thr = config_.loop_detection_timediff_threshold_;
-
   double shortest_distance_ = loop_det_radi * 3.0;
   int closest_idx = -1;
   for (int idx = 0; idx < keyframes.size()-1; ++idx)
@@ -103,19 +100,19 @@ RegistrationOutput LoopClosure::icpAlignment(const pcl::PointCloud<PointType> &s
   pcl::PointCloud<PointType>::Ptr dst_cloud(new pcl::PointCloud<PointType>());
   *src_cloud = src; 
   *dst_cloud = dst; 
-  m_nano_gicp.setInputSource(src_cloud);
-  m_nano_gicp.calculateSourceCovariances();
-  m_nano_gicp.setInputTarget(dst_cloud);
-  m_nano_gicp.calculateTargetCovariances();
-  m_nano_gicp.align(aligned_);
+  nano_gicp_.setInputSource(src_cloud);
+  nano_gicp_.calculateSourceCovariances();
+  nano_gicp_.setInputTarget(dst_cloud);
+  nano_gicp_.calculateTargetCovariances();
+  nano_gicp_.align(aligned_);
   
   // handle results
-  reg_output.score_ = m_nano_gicp.getFitnessScore();
-  if(m_nano_gicp.hasConverged() && reg_output.score_ < config_.gicp_config_.icp_score_thr_) // if matchness score is lower than threshold, (lower is better)
+  reg_output.score_ = nano_gicp_.getFitnessScore();
+  if(nano_gicp_.hasConverged() && reg_output.score_ < config_.gicp_config_.icp_score_thr_) // if matchness score is lower than threshold, (lower is better)
   {
     reg_output.is_valid_ = true;
     reg_output.is_converged_ = true;
-    reg_output.pose_between_eig_ = m_nano_gicp.getFinalTransformation().cast<double>();
+    reg_output.pose_between_eig_ = nano_gicp_.getFinalTransformation().cast<double>();
   }
   return reg_output;
 }
@@ -125,7 +122,7 @@ RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<Poin
   RegistrationOutput reg_output;
   coarse_aligned_.clear(); 
   
-  reg_output.pose_between_eig_ = (m_quatro_handler->align(src, dst, reg_output.is_converged_));
+  reg_output.pose_between_eig_ = (quatro_handler_->align(src, dst, reg_output.is_converged_));
   if (!reg_output.is_converged_) return reg_output;
   else //if valid,
   {

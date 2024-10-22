@@ -53,53 +53,51 @@ class FastLioSamQn
 {
   private:
     ///// basic params
-    std::string m_map_frame;
-    std::string m_package_path;
-    std::string m_seq_name;
+    std::string map_frame_;
+    std::string package_path_;
+    std::string seq_name_;
     ///// shared data - odom and pcd
-    std::mutex m_realtime_pose_mutex, m_keyframes_mutex;
-    std::mutex m_graph_mutex, m_vis_mutex;
-    Eigen::Matrix4d m_last_corrected_pose = Eigen::Matrix4d::Identity();
-    Eigen::Matrix4d m_odom_delta = Eigen::Matrix4d::Identity();
-    PosePcd m_current_frame, m_not_processed_keyframe;
-    std::vector<PosePcd> m_keyframes;
-    int m_current_keyframe_idx = 0;
-    bool m_init = false;
+    std::mutex realtime_pose_mutex_, keyframes_mutex_;
+    std::mutex graph_mutex_, vis_mutex_;
+    Eigen::Matrix4d last_corrected_pose_ = Eigen::Matrix4d::Identity();
+    Eigen::Matrix4d odom_delta_ = Eigen::Matrix4d::Identity();
+    PosePcd current_frame_, not_processed_keyframe_;
+    std::vector<PosePcd> keyframes_;
+    int current_keyframe_idx_ = 0;
+    bool init_ = false;
     ///// graph and values
-    shared_ptr<gtsam::ISAM2> m_isam_handler = nullptr;
-    gtsam::NonlinearFactorGraph m_gtsam_graph;
-    gtsam::Values m_init_esti;
-    gtsam::Values m_corrected_esti;
-    double m_keyframe_thr;
-    double m_voxel_res;
-    int m_sub_key_num;
-    std::vector<std::pair<size_t, size_t>> m_loop_idx_pairs; //for vis
-    bool m_loop_added_flag = false; //for opt
-    bool m_loop_added_flag_vis = false; //for vis
+    shared_ptr<gtsam::ISAM2> isam_handler_ = nullptr;
+    gtsam::NonlinearFactorGraph gtsam_graph_;
+    gtsam::Values init_esti_;
+    gtsam::Values corrected_esti_;
+    double keyframe_thr_;
+    double voxel_res_;
+    int sub_key_num_;
+    std::vector<std::pair<size_t, size_t>> loop_idx_pairs_; //for vis
+    bool loop_added_flag_ = false; //for opt
+    bool loop_added_flag_vis_ = false; //for vis
     ///// visualize
-    tf::TransformBroadcaster m_broadcaster;
-    pcl::PointCloud<pcl::PointXYZ> m_odoms, m_corrected_odoms;
-    nav_msgs::Path m_odom_path, m_corrected_path;
-    bool m_global_map_vis_switch = true;
+    tf::TransformBroadcaster broadcaster_;
+    pcl::PointCloud<pcl::PointXYZ> odoms_, corrected_odoms_;
+    nav_msgs::Path odom_path_, corrected_path_;
+    bool global_map_vis_switch_ = true;
     ///// results
-    bool m_save_map_bag = false, m_save_map_pcd = false, m_save_in_kitti_format = false;
+    bool save_map_bag_ = false, save_map_pcd_ = false, save_in_kitti_format_ = false;
     ///// ros
-    ros::NodeHandle m_nh;
-    ros::Publisher m_corrected_odom_pub, m_corrected_path_pub, m_odom_pub, m_path_pub;
-    ros::Publisher m_corrected_current_pcd_pub, m_corrected_pcd_map_pub, m_loop_detection_pub;
-    ros::Publisher m_realtime_pose_pub;
-    ros::Publisher m_debug_src_pub, m_debug_dst_pub, m_debug_coarse_aligned_pub, m_debug_fine_aligned_pub;
-    ros::Timer m_loop_timer, m_vis_timer;
+    ros::NodeHandle nh_;
+    ros::Publisher corrected_odom_pub_, corrected_path_pub_, odom_pub_, path_pub_;
+    ros::Publisher corrected_current_pcd_pub_, corrected_pcd_map_pub_, loop_detection_pub_;
+    ros::Publisher realtime_pose_pub_;
+    ros::Publisher debug_src_pub_, debug_dst_pub_, debug_coarse_aligned_pub_, debug_fine_aligned_pub_;
+    ros::Timer loop_timer_, vis_timer_;
     // odom, pcd sync, and save flag subscribers
-    shared_ptr<message_filters::Synchronizer<odom_pcd_sync_pol>> m_sub_odom_pcd_sync = nullptr;
-    shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> m_sub_odom = nullptr;
-    shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> m_sub_pcd = nullptr;
-    ros::Subscriber m_sub_save_flag;
-
+    shared_ptr<message_filters::Synchronizer<odom_pcd_sync_pol>> sub_odom_pcd_sync_ = nullptr;
+    shared_ptr<message_filters::Subscriber<nav_msgs::Odometry>> sub_odom_ = nullptr;
+    shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> sub_pcd_ = nullptr;
+    ros::Subscriber sub_save_flag_;
     ///// Loop closure
     LoopClosureConfig lc_config_;
     std::unique_ptr<LoopClosure> loop_closure_;
-    ///// functions
   public:
     FastLioSamQn(const ros::NodeHandle& n_private);
     ~FastLioSamQn();
