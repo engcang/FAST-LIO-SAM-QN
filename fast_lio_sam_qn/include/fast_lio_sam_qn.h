@@ -62,7 +62,7 @@ class FastLioSamQn
     std::mutex graph_mutex_, vis_mutex_;
     Eigen::Matrix4d last_corrected_pose_ = Eigen::Matrix4d::Identity();
     Eigen::Matrix4d odom_delta_ = Eigen::Matrix4d::Identity();
-    PosePcd current_frame_, not_processed_keyframe_;
+    PosePcd current_frame_;
     std::vector<PosePcd> keyframes_;
     int current_keyframe_idx_ = 0;
     bool is_initialized_ = false;

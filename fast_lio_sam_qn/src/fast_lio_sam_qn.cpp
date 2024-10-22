@@ -128,7 +128,6 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
       {
         std::lock_guard<std::mutex> lock(keyframes_mutex_);
         keyframes_.push_back(current_frame_);
-        not_processed_keyframe_ = current_frame_; //to check loop in another thread        
       }
       // 2-3. if so, add to graph
       gtsam::noiseModel::Diagonal::shared_ptr odom_noise = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6)
@@ -198,42 +197,27 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
 
 void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
 {
-  if (!is_initialized_) return;
+  auto &latest_keyframe = keyframes_.back();
+  if (!is_initialized_ || keyframes_.empty() || latest_keyframe.processed_) return;
+  latest_keyframe.processed_ = true;
 
-  //// 1. copy keyframes and not processed keyframes
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  PosePcd not_proc_key_copied;
-  std::vector<PosePcd> keyframes_copied;
-  {
-    std::lock_guard<std::mutex> lock(keyframes_mutex_);
-    if (!not_processed_keyframe_.processed_)
-    {
-      not_proc_key_copied = not_processed_keyframe_;
-      not_processed_keyframe_.processed_ = true;
-      keyframes_copied = keyframes_;
-    }
-  }
-  if (not_proc_key_copied.idx_ == 0 || not_proc_key_copied.processed_ || keyframes_copied.empty()) return; //already processed
-
-  //// 2. detect loop and add to graph
-  high_resolution_clock::time_point t2 = high_resolution_clock::now();
-  const int closest_keyframe_idx = loop_closure_->fetchClosestKeyframeIdx(not_proc_key_copied, keyframes_copied);
+  const int closest_keyframe_idx = loop_closure_->fetchClosestKeyframeIdx(latest_keyframe, keyframes_);
   if (closest_keyframe_idx < 0) return;
 
-  const RegistrationOutput &reg_output = loop_closure_->performLoopClosure(not_proc_key_copied, keyframes_copied, closest_keyframe_idx);
+  const RegistrationOutput &reg_output = loop_closure_->performLoopClosure(latest_keyframe, keyframes_, closest_keyframe_idx);
   if (reg_output.is_valid_)
   {
     ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score_, "\033[0m");
     const auto &score = reg_output.score_;
-    gtsam::Pose3 pose_from = poseEigToGtsamPose(reg_output.pose_between_eig_ * not_proc_key_copied.pose_corrected_eig_); //IMPORTANT: take care of the order
-    gtsam::Pose3 pose_to = poseEigToGtsamPose(keyframes_copied[closest_keyframe_idx].pose_corrected_eig_);
+    gtsam::Pose3 pose_from = poseEigToGtsamPose(reg_output.pose_between_eig_ * latest_keyframe.pose_corrected_eig_); //IMPORTANT: take care of the order
+    gtsam::Pose3 pose_to = poseEigToGtsamPose(keyframes_[closest_keyframe_idx].pose_corrected_eig_);
     gtsam::noiseModel::Diagonal::shared_ptr loop_noise = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << score, score, score, score, score, score).finished());
     {
       std::lock_guard<std::mutex> lock(graph_mutex_);
-      gtsam_graph_.add(gtsam::BetweenFactor<gtsam::Pose3>(not_proc_key_copied.idx_, closest_keyframe_idx, pose_from.between(pose_to), loop_noise));
+      gtsam_graph_.add(gtsam::BetweenFactor<gtsam::Pose3>(latest_keyframe.idx_, closest_keyframe_idx, pose_from.between(pose_to), loop_noise));
     }
-    loop_idx_pairs_.push_back({not_proc_key_copied.idx_, closest_keyframe_idx}); //for vis
-
+    loop_idx_pairs_.push_back({latest_keyframe.idx_, closest_keyframe_idx}); //for vis
     loop_added_flag_vis_ = true;
     loop_added_flag_ = true;
   }
@@ -241,15 +225,14 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
   { 
       ROS_WARN("Loop closure rejected. Score: %.3f", reg_output.score_);
   }
-  
-  high_resolution_clock::time_point t3 = high_resolution_clock::now();
+  high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
   debug_src_pub_.publish(pclToPclRos(loop_closure_->getSourceCloud(), map_frame_));
   debug_dst_pub_.publish(pclToPclRos(loop_closure_->getTargetCloud(), map_frame_));
   debug_fine_aligned_pub_.publish(pclToPclRos(loop_closure_->getFinalAlignedCloud(), map_frame_));
   debug_coarse_aligned_pub_.publish(pclToPclRos(loop_closure_->getCoarseAlignedCloud(), map_frame_));
 
-  ROS_INFO("copy: %.1f, loop: %.1f", duration_cast<microseconds>(t2 - t1).count() / 1e3, duration_cast<microseconds>(t3 - t2).count() / 1e3);
+  ROS_INFO("loop: %.1f", duration_cast<microseconds>(t2 - t1).count() / 1e3);
   return;
 }
 
