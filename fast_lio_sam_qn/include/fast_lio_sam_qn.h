@@ -104,7 +104,7 @@ class FastLioSamQn
     ~FastLioSamQn();
   private:
     //methods
-    void updateVisVars(const PosePcd &pose_pcd_in);
+    void updateOdomsAndPaths(const PosePcd &pose_pcd_in);
     bool checkIfKeyframe(const PosePcd &pose_pcd_in, const PosePcd &latest_pose_pcd);
     visualization_msgs::Marker getLoopMarkers(const gtsam::Values &corrected_esti_in);
     //cb

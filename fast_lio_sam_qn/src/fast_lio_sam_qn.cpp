@@ -90,7 +90,7 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
   {
     //others
     keyframes_.push_back(current_frame_);
-    updateVisVars(current_frame_);
+    updateOdomsAndPaths(current_frame_);
     corrected_current_pcd_pub_.publish(pclToPclRos(current_frame_.pcd_, map_frame_));
     //graph
     gtsam::noiseModel::Diagonal::shared_ptr prior_noise = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4).finished()); // rad*rad, meter*meter
@@ -146,7 +146,7 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
       high_resolution_clock::time_point t3 = high_resolution_clock::now();
       {
         std::lock_guard<std::mutex> lock(vis_mutex_);
-        updateVisVars(current_frame_);
+        updateOdomsAndPaths(current_frame_);
       }
 
       //// 4. optimize with graph
@@ -445,7 +445,7 @@ FastLioSamQn::~FastLioSamQn()
   }
 }
 
-void FastLioSamQn::updateVisVars(const PosePcd &pose_pcd_in)
+void FastLioSamQn::updateOdomsAndPaths(const PosePcd &pose_pcd_in)
 {
   odoms_.points.emplace_back(pose_pcd_in.pose_eig_(0, 3), pose_pcd_in.pose_eig_(1, 3), pose_pcd_in.pose_eig_(2, 3));
   corrected_odoms_.points.emplace_back(pose_pcd_in.pose_corrected_eig_(0, 3), pose_pcd_in.pose_corrected_eig_(1, 3), pose_pcd_in.pose_corrected_eig_(2, 3));
