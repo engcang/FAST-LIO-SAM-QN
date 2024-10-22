@@ -82,6 +82,7 @@ inline gtsam::Pose3 poseEigToGtsamPose(const Eigen::Matrix4d &pose_eig_in)
 	mat.getRPY(r, p, y);
 	return gtsam::Pose3(gtsam::Rot3::RzRyRx(r, p, y), gtsam::Point3(pose_eig_in(0, 3), pose_eig_in(1, 3), pose_eig_in(2, 3)));
 }
+
 inline Eigen::Matrix4d gtsamPoseToPoseEig(const gtsam::Pose3 &gtsam_pose_in)
 {
 	Eigen::Matrix4d pose_eig_out = Eigen::Matrix4d::Identity();
@@ -95,6 +96,7 @@ inline Eigen::Matrix4d gtsamPoseToPoseEig(const gtsam::Pose3 &gtsam_pose_in)
 	pose_eig_out(2, 3) = gtsam_pose_in.translation().z();
 	return pose_eig_out;
 }
+
 inline geometry_msgs::PoseStamped poseEigToPoseStamped(const Eigen::Matrix4d &pose_eig_in, std::string frame_id="map")
 {
 	double r, p, y;
@@ -130,6 +132,7 @@ inline tf::Transform poseStampedToROSTf(const geometry_msgs::PoseStamped &pose)
   transform.setRotation(tf::Quaternion(pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w));
 	return transform;
 }
+
 inline geometry_msgs::PoseStamped gtsamPoseToPoseStamped(const gtsam::Pose3 &gtsam_pose_in, std::string frame_id="map")
 {
 	tf::Quaternion quat = tf::createQuaternionFromRPY(gtsam_pose_in.rotation().roll(), gtsam_pose_in.rotation().pitch(), gtsam_pose_in.rotation().yaw());
@@ -144,6 +147,7 @@ inline geometry_msgs::PoseStamped gtsamPoseToPoseStamped(const gtsam::Pose3 &gts
 	pose.pose.orientation.z = quat.getZ();
 	return pose;
 }
+
 template <typename T>
 inline sensor_msgs::PointCloud2 pclToPclRos(pcl::PointCloud<T> cloud, std::string frame_id="map")
 {
@@ -152,6 +156,7 @@ inline sensor_msgs::PointCloud2 pclToPclRos(pcl::PointCloud<T> cloud, std::strin
 	cloud_ROS.header.frame_id = frame_id;
 	return cloud_ROS;
 }
+
 ///// transformation
 template <typename T>
 inline pcl::PointCloud<T> transformPcd(const pcl::PointCloud<T> &cloud_in, const Eigen::Matrix4d &pose_tf)
