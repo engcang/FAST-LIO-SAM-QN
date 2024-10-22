@@ -20,7 +20,6 @@
 #include <pcl_conversions/pcl_conversions.h> //ros<->pcl
 #include <pcl/common/transforms.h>
 #include <pcl/filters/voxel_grid.h> //voxelgrid
-#include <pcl/io/pcd_io.h> // save map
 ///// Eigen
 #include <Eigen/Eigen> // whole Eigen library: Sparse(Linearalgebra) + Dense(Core+Geometry+LU+Cholesky+SVD+QR+Eigenvalues)
 ///// GTSAM
