@@ -52,7 +52,6 @@ inline pcl::PointCloud<PointType>::Ptr voxelizePcd(const pcl::PointCloud<PointTy
 {
   static pcl::VoxelGrid<PointType> voxelgrid;
   voxelgrid.setLeafSize(voxel_res, voxel_res, voxel_res);
-
   pcl::PointCloud<PointType>::Ptr pcd_in_ptr(new pcl::PointCloud<PointType>);
   pcl::PointCloud<PointType>::Ptr pcd_out(new pcl::PointCloud<PointType>);
   pcd_in_ptr->reserve(pcd_in.size());
@@ -67,7 +66,6 @@ inline pcl::PointCloud<PointType>::Ptr voxelizePcd(const pcl::PointCloud<PointTy
 {
   static pcl::VoxelGrid<PointType> voxelgrid;
   voxelgrid.setLeafSize(voxel_res, voxel_res, voxel_res);
-
   pcl::PointCloud<PointType>::Ptr pcd_out(new pcl::PointCloud<PointType>);
   pcd_out->reserve(pcd_in->size());
   voxelgrid.setInputCloud(pcd_in);
