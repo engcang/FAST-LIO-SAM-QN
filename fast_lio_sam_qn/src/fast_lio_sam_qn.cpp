@@ -109,7 +109,7 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
   else
   {
     //// 1. realtime pose = last corrected odom * delta (last -> current)
-    high_resolution_clock::time_point t1_ = high_resolution_clock::now();
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
     {
       std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
       odom_delta_ = odom_delta_ * last_odom_tf.inverse() * current_frame_.pose_eig_;
@@ -121,7 +121,7 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
     corrected_current_pcd_pub_.publish(pclToPclRos(transformPcd(current_frame_.pcd_, current_frame_.pose_corrected_eig_), map_frame_));
 
     //// 2. check if keyframe
-    high_resolution_clock::time_point t2_ = high_resolution_clock::now();
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
     if (checkIfKeyframe(current_frame_, keyframes_.back()))
     {
       // 2-2. if so, save
@@ -143,14 +143,14 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
       current_keyframe_idx_++;
 
       //// 3. vis
-      high_resolution_clock::time_point t3_ = high_resolution_clock::now();
+      high_resolution_clock::time_point t3 = high_resolution_clock::now();
       {
         std::lock_guard<std::mutex> lock(vis_mutex_);
         updateVisVars(current_frame_);
       }
 
       //// 4. optimize with graph
-      high_resolution_clock::time_point t4_ = high_resolution_clock::now();
+      high_resolution_clock::time_point t4 = high_resolution_clock::now();
       // m_corrected_esti = gtsam::LevenbergMarquardtOptimizer(m_gtsam_graph, init_esti_).optimize(); // cf. isam.update vs values.LM.optimize
       {
         std::lock_guard<std::mutex> lock(graph_mutex_);
@@ -168,7 +168,7 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
 
       //// 5. handle corrected results
       // get corrected poses and reset odom delta (for realtime pose pub)
-      high_resolution_clock::time_point t5_ = high_resolution_clock::now();
+      high_resolution_clock::time_point t5 = high_resolution_clock::now();
       {
         std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
         corrected_esti_ = isam_handler_->calculateEstimate();
@@ -185,12 +185,12 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
         }
         loop_added_flag_ = false;
       }
-      high_resolution_clock::time_point t6_ = high_resolution_clock::now();
+      high_resolution_clock::time_point t6 = high_resolution_clock::now();
 
       ROS_INFO("real: %.1f, key_add: %.1f, vis: %.1f, opt: %.1f, res: %.1f, tot: %.1fms", 
-        duration_cast<microseconds>(t2_-t1_).count()/1e3, duration_cast<microseconds>(t3_-t2_).count()/1e3,
-        duration_cast<microseconds>(t4_-t3_).count()/1e3, duration_cast<microseconds>(t5_-t4_).count()/1e3,
-        duration_cast<microseconds>(t6_-t5_).count()/1e3, duration_cast<microseconds>(t6_-t1_).count()/1e3);
+        duration_cast<microseconds>(t2 - t1).count()/1e3, duration_cast<microseconds>(t3 - t2).count()/1e3,
+        duration_cast<microseconds>(t4 - t3).count()/1e3, duration_cast<microseconds>(t5 - t4).count()/1e3,
+        duration_cast<microseconds>(t6 - t5).count()/1e3, duration_cast<microseconds>(t6 - t1).count()/1e3);
     }
   }
   return;
