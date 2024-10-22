@@ -302,6 +302,7 @@ void FastLioSamQn::visTimerFunc(const ros::TimerEvent& event)
   if (global_map_vis_switch_ && corrected_pcd_map_pub_.getNumSubscribers() > 0) //save time, only once
   {
     pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
+    corrected_map->reserve(keyframes_[0].pcd_.size() *  keyframes_.size()); // it's an approximated size
     {
       std::lock_guard<std::mutex> lock(keyframes_mutex_);
       for (size_t i = 0; i < keyframes_.size(); ++i)
@@ -396,6 +397,7 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
   if (save_map_pcd_)
   {
     pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
+    corrected_map->reserve(keyframes_[0].pcd_.size() *  keyframes_.size()); // it's an approximated size
     {
       std::lock_guard<std::mutex> lock(keyframes_mutex_);
       for (size_t i = 0; i < keyframes_.size(); ++i)
@@ -433,6 +435,7 @@ FastLioSamQn::~FastLioSamQn()
   {
 
     pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
+    corrected_map->reserve(keyframes_[0].pcd_.size() *  keyframes_.size()); // it's an approximated size
     {
       std::lock_guard<std::mutex> lock(keyframes_mutex_);
       for (int i = 0; i < keyframes_.size(); ++i)
