@@ -138,10 +138,16 @@ RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<Poin
   return reg_output;
 }
 
-RegistrationOutput LoopClosure::retrieveLoopClosureMeasurement(const PosePcd &query_keyframe, const std::vector<PosePcd> &keyframes) 
+RegistrationOutput LoopClosure::performLoopClosure(const PosePcd &query_keyframe, const std::vector<PosePcd> &keyframes) 
+{
+  closest_keyframe_idx_ = fetchClosestKeyframeIdx(query_keyframe, keyframes);
+  return performLoopClosure(query_keyframe, keyframes, closest_keyframe_idx_);
+}
+
+RegistrationOutput LoopClosure::performLoopClosure(const PosePcd &query_keyframe, const std::vector<PosePcd> &keyframes, const int closest_keyframe_idx) 
 {
   RegistrationOutput reg_output;
-  closest_keyframe_idx_ = fetchClosestKeyframeIdx(query_keyframe, keyframes);
+  closest_keyframe_idx_ = closest_keyframe_idx;
   if (closest_keyframe_idx_ >= 0) 
   {
     // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)

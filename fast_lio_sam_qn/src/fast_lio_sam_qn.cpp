@@ -228,11 +228,10 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
 
   //// 2. detect loop and add to graph
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
-  const RegistrationOutput &reg_output = loop_closure_->retrieveLoopClosureMeasurement(not_proc_key_copied, keyframes_copied);
-  const int closest_keyframe_idx = loop_closure_->getClosestKeyframeidx();
-
+  const int closest_keyframe_idx = loop_closure_->fetchClosestKeyframeIdx(not_proc_key_copied, keyframes_copied);
   if (closest_keyframe_idx < 0) return;
 
+  const RegistrationOutput &reg_output = loop_closure_->performLoopClosure(not_proc_key_copied, keyframes_copied, closest_keyframe_idx);
   if (reg_output.is_valid_)
   {
     ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score_, "\033[0m");
