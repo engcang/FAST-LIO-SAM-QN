@@ -33,13 +33,13 @@ int LoopClosure::fetchClosestKeyframeIdx(const PosePcd &front_keyframe, const st
   for (int idx = 0; idx < keyframes.size()-1; ++idx)
   {
     //check if potential loop: close enough in distance, far enough in time
-    double tmp_dist = (keyframes[idx].pose_corrected_eig.block<3, 1>(0, 3) - front_keyframe.pose_corrected_eig.block<3, 1>(0, 3)).norm();
-    if (loop_det_radi > tmp_dist && loop_det_tdiff_thr < (front_keyframe.timestamp - keyframes[idx].timestamp))
+    double tmp_dist = (keyframes[idx].pose_corrected_eig_.block<3, 1>(0, 3) - front_keyframe.pose_corrected_eig_.block<3, 1>(0, 3)).norm();
+    if (loop_det_radi > tmp_dist && loop_det_tdiff_thr < (front_keyframe.timestamp_ - keyframes[idx].timestamp_))
     {
       if (tmp_dist < shortest_distance_)
       {
         shortest_distance_ = tmp_dist;
-        closest_idx = keyframes[idx].idx;
+        closest_idx = keyframes[idx].idx_;
       }
     }
   }
@@ -49,7 +49,7 @@ int LoopClosure::fetchClosestKeyframeIdx(const PosePcd &front_keyframe, const st
 std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> LoopClosure::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const double voxel_res, const bool enable_quatro, const bool enable_submap_matching)
 {
   pcl::PointCloud<PointType> dst_accum, src_accum;
-  int num_approx = keyframes[src_idx].pcd.size() * 2 * submap_range;
+  int num_approx = keyframes[src_idx].pcd_.size() * 2 * submap_range;
   src_accum.reserve(num_approx);
   dst_accum.reserve(num_approx);
   if (enable_submap_matching)
@@ -58,22 +58,22 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> LoopClosure::
     {
       if (i >= 0 && i < keyframes.size()-1) // if exists
       {
-        src_accum += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+        src_accum += transformPcd(keyframes[i].pcd_, keyframes[i].pose_corrected_eig_);
       }
     }
     for (int i = dst_idx - submap_range; i < dst_idx + submap_range + 1; ++i)
     {
       if (i >= 0 && i < keyframes.size()-1) //if exists
       {
-        dst_accum += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+        dst_accum += transformPcd(keyframes[i].pcd_, keyframes[i].pose_corrected_eig_);
       }
     }
   }
   else 
   {
-    src_accum = transformPcd(keyframes[src_idx].pcd, keyframes[src_idx].pose_corrected_eig);
+    src_accum = transformPcd(keyframes[src_idx].pcd_, keyframes[src_idx].pose_corrected_eig_);
     if (enable_quatro) {
-      dst_accum = transformPcd(keyframes[dst_idx].pcd, keyframes[dst_idx].pose_corrected_eig);
+      dst_accum = transformPcd(keyframes[dst_idx].pcd_, keyframes[dst_idx].pose_corrected_eig_);
     } 
     else
     {
@@ -83,7 +83,7 @@ std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> LoopClosure::
       {
         if (i >= 0 && i < keyframes.size()-1) //if exists
         {
-          dst_accum += transformPcd(keyframes[i].pcd, keyframes[i].pose_corrected_eig);
+          dst_accum += transformPcd(keyframes[i].pcd_, keyframes[i].pose_corrected_eig_);
         }
       }
     }
@@ -144,7 +144,7 @@ RegistrationOutput LoopClosure::retrieveLoopClosureMeasurement(const PosePcd &qu
   if (closest_keyframe_idx_ >= 0) 
   {
     // Quatro + NANO-GICP to check loop (from front_keyframe to closest keyframe's neighbor)
-    const auto &[src_cloud, dst_cloud] = setSrcAndDstCloud(keyframes, query_keyframe.idx, closest_keyframe_idx_,
+    const auto &[src_cloud, dst_cloud] = setSrcAndDstCloud(keyframes, query_keyframe.idx_, closest_keyframe_idx_,
                                                                       config_.num_submap_keyframes_, config_.voxel_res_,
                                                                       config_.enable_quatro_, config_.enable_submap_matching_);
     // Only for visualization

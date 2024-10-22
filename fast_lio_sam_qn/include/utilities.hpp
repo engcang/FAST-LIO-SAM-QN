@@ -38,12 +38,12 @@ using PointType = pcl::PointXYZI;
 
 struct PosePcd
 {
-  pcl::PointCloud<PointType> pcd;
-  Eigen::Matrix4d pose_eig = Eigen::Matrix4d::Identity();
-  Eigen::Matrix4d pose_corrected_eig = Eigen::Matrix4d::Identity();
-  double timestamp;
-  int idx;
-  bool processed = false;
+  pcl::PointCloud<PointType> pcd_;
+  Eigen::Matrix4d pose_eig_           = Eigen::Matrix4d::Identity();
+  Eigen::Matrix4d pose_corrected_eig_ = Eigen::Matrix4d::Identity();
+  double timestamp_;
+  int idx_;
+  bool processed_ = false;
   PosePcd(){};
   PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
 };
@@ -77,73 +77,73 @@ inline pcl::PointCloud<PointType>::Ptr voxelizePcd(const pcl::PointCloud<PointTy
 ///// conversions
 inline gtsam::Pose3 poseEigToGtsamPose(const Eigen::Matrix4d &pose_eig_in)
 {
-	double r_, p_, y_;
-	tf::Matrix3x3 mat_;
-	tf::matrixEigenToTF(pose_eig_in.block<3, 3>(0, 0), mat_);
-	mat_.getRPY(r_, p_, y_);
-	return gtsam::Pose3(gtsam::Rot3::RzRyRx(r_, p_, y_), gtsam::Point3(pose_eig_in(0, 3), pose_eig_in(1, 3), pose_eig_in(2, 3)));
+	double r, p, y;
+	tf::Matrix3x3 mat;
+	tf::matrixEigenToTF(pose_eig_in.block<3, 3>(0, 0), mat);
+	mat.getRPY(r, p, y);
+	return gtsam::Pose3(gtsam::Rot3::RzRyRx(r, p, y), gtsam::Point3(pose_eig_in(0, 3), pose_eig_in(1, 3), pose_eig_in(2, 3)));
 }
 inline Eigen::Matrix4d gtsamPoseToPoseEig(const gtsam::Pose3 &gtsam_pose_in)
 {
-	Eigen::Matrix4d pose_eig_out_ = Eigen::Matrix4d::Identity();
-	tf::Quaternion quat_ = tf::createQuaternionFromRPY(gtsam_pose_in.rotation().roll(), gtsam_pose_in.rotation().pitch(), gtsam_pose_in.rotation().yaw());
-	tf::Matrix3x3 mat_(quat_);
-	Eigen::Matrix3d tmp_rot_mat_;
-	tf::matrixTFToEigen(mat_, tmp_rot_mat_);
-	pose_eig_out_.block<3, 3>(0, 0) = tmp_rot_mat_;
-	pose_eig_out_(0, 3) = gtsam_pose_in.translation().x();
-	pose_eig_out_(1, 3) = gtsam_pose_in.translation().y();
-	pose_eig_out_(2, 3) = gtsam_pose_in.translation().z();
-	return pose_eig_out_;
+	Eigen::Matrix4d pose_eig_out = Eigen::Matrix4d::Identity();
+	tf::Quaternion quat = tf::createQuaternionFromRPY(gtsam_pose_in.rotation().roll(), gtsam_pose_in.rotation().pitch(), gtsam_pose_in.rotation().yaw());
+	tf::Matrix3x3 mat(quat);
+	Eigen::Matrix3d tmp_rot_mat;
+	tf::matrixTFToEigen(mat, tmp_rot_mat);
+	pose_eig_out.block<3, 3>(0, 0) = tmp_rot_mat;
+	pose_eig_out(0, 3) = gtsam_pose_in.translation().x();
+	pose_eig_out(1, 3) = gtsam_pose_in.translation().y();
+	pose_eig_out(2, 3) = gtsam_pose_in.translation().z();
+	return pose_eig_out;
 }
 inline geometry_msgs::PoseStamped poseEigToPoseStamped(const Eigen::Matrix4d &pose_eig_in, std::string frame_id="map")
 {
-	double r_, p_, y_;
-	tf::Matrix3x3 mat_;
-	tf::matrixEigenToTF(pose_eig_in.block<3, 3>(0, 0), mat_);
-	mat_.getRPY(r_, p_, y_);
-	tf::Quaternion quat_ = tf::createQuaternionFromRPY(r_, p_, y_);
-	geometry_msgs::PoseStamped pose_;
-	pose_.header.frame_id = frame_id;
-	pose_.pose.position.x = pose_eig_in(0, 3);
-	pose_.pose.position.y = pose_eig_in(1, 3);
-	pose_.pose.position.z = pose_eig_in(2, 3);
-	pose_.pose.orientation.w = quat_.getW();
-	pose_.pose.orientation.x = quat_.getX();
-	pose_.pose.orientation.y = quat_.getY();
-	pose_.pose.orientation.z = quat_.getZ();
-	return pose_;
+	double r, p, y;
+	tf::Matrix3x3 mat;
+	tf::matrixEigenToTF(pose_eig_in.block<3, 3>(0, 0), mat);
+	mat.getRPY(r, p, y);
+	tf::Quaternion quat_ = tf::createQuaternionFromRPY(r, p, y);
+	geometry_msgs::PoseStamped pose;
+	pose.header.frame_id = frame_id;
+	pose.pose.position.x = pose_eig_in(0, 3);
+	pose.pose.position.y = pose_eig_in(1, 3);
+	pose.pose.position.z = pose_eig_in(2, 3);
+	pose.pose.orientation.w = quat_.getW();
+	pose.pose.orientation.x = quat_.getX();
+	pose.pose.orientation.y = quat_.getY();
+	pose.pose.orientation.z = quat_.getZ();
+	return pose;
 }
 inline geometry_msgs::PoseStamped gtsamPoseToPoseStamped(const gtsam::Pose3 &gtsam_pose_in, std::string frame_id="map")
 {
-	tf::Quaternion quat_ = tf::createQuaternionFromRPY(gtsam_pose_in.rotation().roll(), gtsam_pose_in.rotation().pitch(), gtsam_pose_in.rotation().yaw());
-	geometry_msgs::PoseStamped pose_;
-	pose_.header.frame_id = frame_id;
-	pose_.pose.position.x = gtsam_pose_in.translation().x();
-	pose_.pose.position.y = gtsam_pose_in.translation().y();
-	pose_.pose.position.z = gtsam_pose_in.translation().z();
-	pose_.pose.orientation.w = quat_.getW();
-	pose_.pose.orientation.x = quat_.getX();
-	pose_.pose.orientation.y = quat_.getY();
-	pose_.pose.orientation.z = quat_.getZ();
-	return pose_;
+	tf::Quaternion quat = tf::createQuaternionFromRPY(gtsam_pose_in.rotation().roll(), gtsam_pose_in.rotation().pitch(), gtsam_pose_in.rotation().yaw());
+	geometry_msgs::PoseStamped pose;
+	pose.header.frame_id = frame_id;
+	pose.pose.position.x = gtsam_pose_in.translation().x();
+	pose.pose.position.y = gtsam_pose_in.translation().y();
+	pose.pose.position.z = gtsam_pose_in.translation().z();
+	pose.pose.orientation.w = quat.getW();
+	pose.pose.orientation.x = quat.getX();
+	pose.pose.orientation.y = quat.getY();
+	pose.pose.orientation.z = quat.getZ();
+	return pose;
 }
 template <typename T>
 inline sensor_msgs::PointCloud2 pclToPclRos(pcl::PointCloud<T> cloud, std::string frame_id="map")
 {
-	sensor_msgs::PointCloud2 cloud_ROS_;
-	pcl::toROSMsg(cloud, cloud_ROS_);
-	cloud_ROS_.header.frame_id = frame_id;
-	return cloud_ROS_;
+	sensor_msgs::PointCloud2 cloud_ROS;
+	pcl::toROSMsg(cloud, cloud_ROS);
+	cloud_ROS.header.frame_id = frame_id;
+	return cloud_ROS;
 }
 ///// transformation
 template <typename T>
 inline pcl::PointCloud<T> transformPcd(const pcl::PointCloud<T> &cloud_in, const Eigen::Matrix4d &pose_tf)
 {
 	if (cloud_in.size() == 0) return cloud_in;
-	pcl::PointCloud<T> pcl_out_ = cloud_in;
-	pcl::transformPointCloud(cloud_in, pcl_out_, pose_tf);
-	return pcl_out_;
+	pcl::PointCloud<T> pcl_out = cloud_in;
+	pcl::transformPointCloud(cloud_in, pcl_out, pose_tf);
+	return pcl_out;
 }
 
 #endif
