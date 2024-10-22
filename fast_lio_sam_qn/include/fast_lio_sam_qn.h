@@ -41,8 +41,9 @@
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/ISAM2.h>
 ///// coded headers
-#include "utilities.hpp"
 #include "loop_closure.h"
+#include "pose_pcd.hpp"
+#include "utilities.hpp"
 
 namespace fs = std::filesystem;
 using namespace std::chrono;

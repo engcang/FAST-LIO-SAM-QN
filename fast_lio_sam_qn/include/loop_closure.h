@@ -7,6 +7,7 @@
 ///// Quatro
 #include <quatro/quatro_module.h>
 ///// coded headers
+#include "pose_pcd.hpp"
 #include "utilities.hpp"
 
 struct NanoGICPConfig {
