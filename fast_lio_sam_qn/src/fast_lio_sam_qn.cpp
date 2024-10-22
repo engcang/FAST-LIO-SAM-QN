@@ -431,15 +431,16 @@ FastLioSamQn::~FastLioSamQn()
   }
   if (save_map_pcd_)
   {
-    pcl::PointCloud<PointType> corrected_map;
+
+    pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
     {
       std::lock_guard<std::mutex> lock(keyframes_mutex_);
       for (int i = 0; i < keyframes_.size(); ++i)
       {
-        corrected_map += transformPcd(keyframes_[i].pcd_, keyframes_[i].pose_corrected_eig_);
+        *corrected_map += transformPcd(keyframes_[i].pcd_, keyframes_[i].pose_corrected_eig_);
       }
     }
-    pcl::io::savePCDFileASCII<PointType> (package_path_+"/result.pcd", corrected_map);
+    pcl::io::savePCDFileASCII<PointType> (package_path_+"/result.pcd", *corrected_map);
     cout << "\033[32;1mResult saved in .pcd format!!!\033[0m" << endl;
   }
 }
