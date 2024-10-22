@@ -14,7 +14,6 @@ struct NanoGICPConfig {
   int    nano_correspondences_number_    = 15;
   int    nano_max_iter_                  = 32;
   int    nano_ransac_max_iter_           = 5;
-
   double max_corr_dist_                      = 2.0;
   double icp_score_thr_                      = 10.0;
   double transformation_epsilon_             = 0.01;
@@ -25,10 +24,8 @@ struct NanoGICPConfig {
 struct QuatroConfig {
   bool   use_optimized_matching_         = true;
   bool   estimat_scale_                  = false;
-
   int    quatro_max_num_corres_          = 500;
   int    quatro_max_iter_                = 50;
-  
   double quatro_distance_threshold_      = 30.0;
   double fpfh_normal_radius_             = 0.30; // It should be 2.5 - 3.0 * `voxel_res`
   double fpfh_radius_                    = 0.50; // It should be 5.0 * `voxel_res`
@@ -40,12 +37,10 @@ struct QuatroConfig {
 struct LoopClosureConfig {
   bool enable_quatro_          = true;
   bool enable_submap_matching_ = true;
-
-  int num_submap_keyframes_ = 10;
-  double voxel_res_ = 0.1;
+  int num_submap_keyframes_    = 10;
+  double voxel_res_            = 0.1;
   double loop_detection_radius_;
   double loop_detection_timediff_threshold_;
-  
   NanoGICPConfig gicp_config_; 
   QuatroConfig quatro_config_; 
 };
