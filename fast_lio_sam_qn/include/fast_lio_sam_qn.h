@@ -65,7 +65,7 @@ class FastLioSamQn
     PosePcd current_frame_, not_processed_keyframe_;
     std::vector<PosePcd> keyframes_;
     int current_keyframe_idx_ = 0;
-    bool init_ = false;
+    bool is_initialized_ = false;
     ///// graph and values
     std::shared_ptr<gtsam::ISAM2> isam_handler_ = nullptr;
     gtsam::NonlinearFactorGraph gtsam_graph_;

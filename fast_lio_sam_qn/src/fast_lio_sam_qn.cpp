@@ -86,7 +86,7 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
   last_odom_tf = current_frame_.pose_eig_; //to calculate delta
   current_frame_ = PosePcd(*odom_msg, *pcd_msg, current_keyframe_idx_); //to be checked if keyframe or not
 
-  if (!init_) //// init only once
+  if (!is_initialized_) //// init only once
   {
     //others
     keyframes_.push_back(current_frame_);
@@ -104,7 +104,7 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
       broadcaster_.sendTransform(tf::StampedTransform(poseEigToROSTf(current_frame_.pose_corrected_eig_), ros::Time::now(), map_frame_, "robot"));
     }
     current_keyframe_idx_++;
-    init_ = true;
+    is_initialized_ = true;
   }
   else
   {
@@ -198,7 +198,7 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
 
 void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
 {
-  if (!init_) return;
+  if (!is_initialized_) return;
 
   //// 1. copy keyframes and not processed keyframes
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -255,7 +255,7 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
 
 void FastLioSamQn::visTimerFunc(const ros::TimerEvent& event)
 {
-  if (!init_) return;
+  if (!is_initialized_) return;
 
   high_resolution_clock::time_point tv1 = high_resolution_clock::now();
   //// 1. if loop closed, correct vis data
