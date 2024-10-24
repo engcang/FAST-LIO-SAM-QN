@@ -46,7 +46,7 @@ int LoopClosure::fetchClosestKeyframeIdx(const PosePcd &front_keyframe, const st
   return closest_idx;
 }
 
-PcdPair LoopClosure::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const double voxel_res, const bool enable_quatro, const bool enable_submap_matching)
+PcdPair LoopClosure::setSrcAndDstCloud(const std::vector<PosePcd> &keyframes, const int src_idx, const int dst_idx, const int submap_range, const double voxel_res, const bool enable_quatro, const bool enable_submap_matching)
 {
   pcl::PointCloud<PointType> dst_accum, src_accum;
   int num_approx = keyframes[src_idx].pcd_.size() * 2 * submap_range;
