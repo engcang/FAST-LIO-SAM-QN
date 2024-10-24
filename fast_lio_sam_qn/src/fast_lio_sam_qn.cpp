@@ -317,7 +317,7 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
   std::string scans_directory = seq_directory + "/scans";
   if (save_in_kitti_format_)
   {
-    std::cout << "\033[32;1mScans are saved in " << scans_directory << ", following the KITTI and TUM format\033[0m" << std::endl;
+    ROS_INFO("\033[32;1mScans are saved in %s, following the KITTI and TUM format\033[0m", scans_directory.c_str());
     if (fs::exists(seq_directory))
     {
       fs::remove_all(seq_directory);
@@ -334,7 +334,7 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
         // Save the point cloud
         std::stringstream ss_;
         ss_ << scans_directory << "/" << std::setw(6) << std::setfill('0') << i << ".pcd";
-        std::cout << "Saving " << ss_.str()  << "..." << std::endl;
+        ROS_INFO("Saving %s...", ss_.str().c_str());
         pcl::io::savePCDFileASCII<PointType>(ss_.str(), keyframes_[i].pcd_);
 
         // Save the pose in KITTI format
@@ -357,7 +357,7 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
     }
     kitti_pose_file.close();
     tum_pose_file.close();
-    std::cout << "\033[32;1mScans and poses saved in .pcd and KITTI format\033[0m" << std::endl;
+    ROS_INFO("\033[32;1mScans and poses saved in .pcd and KITTI format\033[0m");
   }
 
   if (save_map_bag_)
@@ -375,7 +375,7 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
       }
     }
     bag.close();
-    std::cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << std::endl;
+    ROS_INFO("\033[36;1mResult saved in .bag format!!!\033[0m");
   }
 
   if (save_map_pcd_)
@@ -391,7 +391,7 @@ void FastLioSamQn::saveFlagCallback(const std_msgs::String::ConstPtr& msg)
     }
     const auto &voxelized_map = voxelizePcd(corrected_map, voxel_res_);
     pcl::io::savePCDFileASCII<PointType> (seq_directory + "/" + seq_name_ + "_map.pcd", *voxelized_map);
-    cout << "\033[32;1mAccumulated map cloud saved in .pcd format\033[0m" << endl;
+    ROS_INFO("\033[32;1mAccumulated map cloud saved in .pcd format\033[0m");
   }
 }
 
