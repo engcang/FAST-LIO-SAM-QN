@@ -98,7 +98,7 @@ class FastLioSamQn
     ros::Subscriber sub_save_flag_;
     ///// Loop closure
     LoopClosureConfig lc_config_;
-    std::unique_ptr<LoopClosure> loop_closure_;
+    std::shared_ptr<LoopClosure> loop_closure_;
   public:
     FastLioSamQn(const ros::NodeHandle& n_private);
     ~FastLioSamQn();

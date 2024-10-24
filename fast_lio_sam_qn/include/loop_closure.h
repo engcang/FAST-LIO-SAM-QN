@@ -62,7 +62,7 @@ class LoopClosure
   private:
   
     nano_gicp::NanoGICP<PointType, PointType> nano_gicp_;
-    shared_ptr<quatro<PointType>> quatro_handler_ = nullptr;
+    std::shared_ptr<quatro<PointType>> quatro_handler_ = nullptr;
 
     int closest_keyframe_idx_ = -1;
 
