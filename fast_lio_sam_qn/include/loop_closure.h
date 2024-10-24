@@ -57,27 +57,24 @@ struct RegistrationOutput
   Eigen::Matrix4d pose_between_eig_  = Eigen::Matrix4d::Identity();
 };
 
+using PcdPair = std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>>;
 class LoopClosure
 {
   private:
-  
     nano_gicp::NanoGICP<PointType, PointType> nano_gicp_;
     std::shared_ptr<quatro<PointType>> quatro_handler_ = nullptr;
-
     int closest_keyframe_idx_ = -1;
-
     pcl::PointCloud<PointType>::Ptr src_cloud_;
     pcl::PointCloud<PointType>::Ptr dst_cloud_;
     pcl::PointCloud<PointType> coarse_aligned_;
     pcl::PointCloud<PointType> aligned_;
-    
     LoopClosureConfig config_;
 
   public:
     LoopClosure(const LoopClosureConfig &config);
     ~LoopClosure();
     int fetchClosestKeyframeIdx(const PosePcd &query_keyframe, const std::vector<PosePcd> &keyframes);
-    std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>> setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const double voxel_res, const bool enable_quatro, const bool enable_submap_matching);
+    PcdPair setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int src_idx, const int dst_idx, const int submap_range, const double voxel_res, const bool enable_quatro, const bool enable_submap_matching);
     RegistrationOutput icpAlignment(const pcl::PointCloud<PointType> &src, const pcl::PointCloud<PointType> &dst);
     RegistrationOutput coarseToFineAlignment(const pcl::PointCloud<PointType> &src, const pcl::PointCloud<PointType> &dst);
     RegistrationOutput performLoopClosure(const PosePcd &query_keyframe, const std::vector<PosePcd> &keyframes);
