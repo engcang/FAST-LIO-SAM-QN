@@ -74,8 +74,6 @@ class LoopClosure
     LoopClosureConfig config_;
 
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
     LoopClosure(const LoopClosureConfig &config);
     ~LoopClosure();
     int fetchClosestKeyframeIdx(const PosePcd &query_keyframe, const std::vector<PosePcd> &keyframes);
