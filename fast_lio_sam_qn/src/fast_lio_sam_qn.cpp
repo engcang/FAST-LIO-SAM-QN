@@ -417,7 +417,8 @@ FastLioSamQn::~FastLioSamQn()
         *corrected_map += transformPcd(keyframes_[i].pcd_, keyframes_[i].pose_corrected_eig_);
       }
     }
-    pcl::io::savePCDFileASCII<PointType> (package_path_+"/result.pcd", *corrected_map);
+    const auto &voxelized_map = voxelizePcd(corrected_map, voxel_res_);
+    pcl::io::savePCDFileASCII<PointType> (package_path_+"/result.pcd", *voxelized_map);
     cout << "\033[32;1mResult saved in .pcd format!!!\033[0m" << endl;
   }
 }
