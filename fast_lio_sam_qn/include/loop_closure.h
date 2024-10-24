@@ -53,7 +53,7 @@ struct RegistrationOutput
 {
   bool is_valid_                     = false;
   bool is_converged_                 = false;
-  double score_                      = std::numeric_limits<float>::max();
+  double score_                      = std::numeric_limits<double>::max();
   Eigen::Matrix4d pose_between_eig_  = Eigen::Matrix4d::Identity();
 };
 
