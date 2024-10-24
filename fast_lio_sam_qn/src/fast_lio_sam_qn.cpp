@@ -86,41 +86,31 @@ void FastLioSamQn::odomPcdCallback(const nav_msgs::OdometryConstPtr &odom_msg, c
   Eigen::Matrix4d last_odom_tf;
   last_odom_tf = current_frame_.pose_eig_; //to calculate delta
   current_frame_ = PosePcd(*odom_msg, *pcd_msg, current_keyframe_idx_); //to be checked if keyframe or not
+  high_resolution_clock::time_point t1 = high_resolution_clock::now();
+  {
+    //// 1. realtime pose = last corrected odom * delta (last -> current)
+    std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
+    odom_delta_ = odom_delta_ * last_odom_tf.inverse() * current_frame_.pose_eig_;
+    current_frame_.pose_corrected_eig_ = last_corrected_pose_ * odom_delta_;
+    realtime_pose_pub_.publish(poseEigToPoseStamped(current_frame_.pose_corrected_eig_, map_frame_));
+    broadcaster_.sendTransform(tf::StampedTransform(poseEigToROSTf(current_frame_.pose_corrected_eig_), ros::Time::now(), map_frame_, "robot"));
+  }
+  corrected_current_pcd_pub_.publish(pclToPclRos(transformPcd(current_frame_.pcd_, current_frame_.pose_corrected_eig_), map_frame_));
 
   if (!is_initialized_) //// init only once
   {
     //others
     keyframes_.push_back(current_frame_);
     updateOdomsAndPaths(current_frame_);
-    corrected_current_pcd_pub_.publish(pclToPclRos(current_frame_.pcd_, map_frame_));
     //graph
     gtsam::noiseModel::Diagonal::shared_ptr prior_noise = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4).finished()); // rad*rad, meter*meter
     gtsam_graph_.add(gtsam::PriorFactor<gtsam::Pose3>(0, poseEigToGtsamPose(current_frame_.pose_eig_), prior_noise));
     init_esti_.insert(current_keyframe_idx_, poseEigToGtsamPose(current_frame_.pose_eig_));
-    {
-      std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
-      odom_delta_ = odom_delta_ * last_odom_tf.inverse() * current_frame_.pose_eig_;
-      current_frame_.pose_corrected_eig_ = last_corrected_pose_ * odom_delta_;
-      realtime_pose_pub_.publish(poseEigToPoseStamped(current_frame_.pose_corrected_eig_, map_frame_));
-      broadcaster_.sendTransform(tf::StampedTransform(poseEigToROSTf(current_frame_.pose_corrected_eig_), ros::Time::now(), map_frame_, "robot"));
-    }
     current_keyframe_idx_++;
     is_initialized_ = true;
   }
   else
   {
-    //// 1. realtime pose = last corrected odom * delta (last -> current)
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    {
-      std::lock_guard<std::mutex> lock(realtime_pose_mutex_);
-      odom_delta_ = odom_delta_ * last_odom_tf.inverse() * current_frame_.pose_eig_;
-      current_frame_.pose_corrected_eig_ = last_corrected_pose_ * odom_delta_;
-      realtime_pose_pub_.publish(poseEigToPoseStamped(current_frame_.pose_corrected_eig_, map_frame_));
-      broadcaster_.sendTransform(tf::StampedTransform(poseEigToROSTf(current_frame_.pose_corrected_eig_), ros::Time::now(), map_frame_, "robot"));
-    }
-    // pub current scan in corrected pose frame
-    corrected_current_pcd_pub_.publish(pclToPclRos(transformPcd(current_frame_.pcd_, current_frame_.pose_corrected_eig_), map_frame_));
-
     //// 2. check if keyframe
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     if (checkIfKeyframe(current_frame_, keyframes_.back()))
