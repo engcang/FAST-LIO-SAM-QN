@@ -1,5 +1,5 @@
-#ifndef FAST_LIO_SAM_QN_POSE_PCD_H
-#define FAST_LIO_SAM_QN_POSE_PCD_H
+#ifndef FAST_LIO_SAM_QN_POSE_PCD_HPP
+#define FAST_LIO_SAM_QN_POSE_PCD_HPP
 
 ///// coded headers
 #include "utilities.hpp"

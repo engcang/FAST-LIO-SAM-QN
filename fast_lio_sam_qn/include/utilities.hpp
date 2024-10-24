@@ -1,5 +1,5 @@
-#ifndef FAST_LIO_SAM_QN_UTILITY_H
-#define FAST_LIO_SAM_QN_UTILITY_H
+#ifndef FAST_LIO_SAM_QN_UTILITY_HPP
+#define FAST_LIO_SAM_QN_UTILITY_HPP
 
 ///// common headers
 #include <string>
