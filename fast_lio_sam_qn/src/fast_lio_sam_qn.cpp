@@ -209,7 +209,7 @@ void FastLioSamQn::loopTimerFunc(const ros::TimerEvent& event)
   const RegistrationOutput &reg_output = loop_closure_->performLoopClosure(latest_keyframe, keyframes_, closest_keyframe_idx);
   if (reg_output.is_valid_)
   {
-    ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f", reg_output.score_, "\033[0m");
+    ROS_INFO("\033[1;32mLoop closure accepted. Score: %.3f\033[0m", reg_output.score_);
     const auto &score = reg_output.score_;
     gtsam::Pose3 pose_from = poseEigToGtsamPose(reg_output.pose_between_eig_ * latest_keyframe.pose_corrected_eig_); //IMPORTANT: take care of the order
     gtsam::Pose3 pose_to = poseEigToGtsamPose(keyframes_[closest_keyframe_idx].pose_corrected_eig_);
@@ -404,7 +404,7 @@ FastLioSamQn::~FastLioSamQn()
     bag.open(package_path_+"/result.bag", rosbag::bagmode::Write);
     {
       std::lock_guard<std::mutex> lock(keyframes_mutex_);
-      for (int i = 0; i < keyframes_.size(); ++i)
+      for (size_t i = 0; i < keyframes_.size(); ++i)
       {
         ros::Time time;
         time.fromSec(keyframes_[i].timestamp_);
@@ -422,7 +422,7 @@ FastLioSamQn::~FastLioSamQn()
     corrected_map->reserve(keyframes_[0].pcd_.size() *  keyframes_.size()); // it's an approximated size
     {
       std::lock_guard<std::mutex> lock(keyframes_mutex_);
-      for (int i = 0; i < keyframes_.size(); ++i)
+      for (size_t i = 0; i < keyframes_.size(); ++i)
       {
         *corrected_map += transformPcd(keyframes_[i].pcd_, keyframes_[i].pose_corrected_eig_);
       }
@@ -446,7 +446,7 @@ visualization_msgs::Marker FastLioSamQn::getLoopMarkers(const gtsam::Values &cor
   visualization_msgs::Marker edges; edges.type = 5u;
   edges.scale.x = 0.12f; edges.header.frame_id = map_frame_; edges.pose.orientation.w = 1.0f;
   edges.color.r = 1.0f; edges.color.g = 1.0f; edges.color.b = 1.0f; edges.color.a = 1.0f;
-  for (int i = 0; i < loop_idx_pairs_.size(); ++i)
+  for (size_t i = 0; i < loop_idx_pairs_.size(); ++i)
   {
     if (loop_idx_pairs_[i].first >= corrected_esti_in.size() || loop_idx_pairs_[i].second >= corrected_esti_in.size()) continue;
     gtsam::Pose3 pose = corrected_esti_in.at<gtsam::Pose3>(loop_idx_pairs_[i].first);

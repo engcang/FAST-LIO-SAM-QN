@@ -30,7 +30,7 @@ int LoopClosure::fetchClosestKeyframeIdx(const PosePcd &front_keyframe, const st
   const auto &loop_det_tdiff_thr = config_.loop_detection_timediff_threshold_;
   double shortest_distance_ = loop_det_radi * 3.0;
   int closest_idx = -1;
-  for (int idx = 0; idx < keyframes.size()-1; ++idx)
+  for (size_t idx = 0; idx < keyframes.size()-1; ++idx)
   {
     //check if potential loop: close enough in distance, far enough in time
     double tmp_dist = (keyframes[idx].pose_corrected_eig_.block<3, 1>(0, 3) - front_keyframe.pose_corrected_eig_.block<3, 1>(0, 3)).norm();
@@ -56,14 +56,14 @@ PcdPair LoopClosure::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int
   {
     for (int i = src_idx - submap_range; i < src_idx + submap_range + 1; ++i)
     {
-      if (i >= 0 && i < keyframes.size()-1) // if exists
+      if (i >= 0 && i < static_cast<int>(keyframes.size()-1)) 
       {
         src_accum += transformPcd(keyframes[i].pcd_, keyframes[i].pose_corrected_eig_);
       }
     }
     for (int i = dst_idx - submap_range; i < dst_idx + submap_range + 1; ++i)
     {
-      if (i >= 0 && i < keyframes.size()-1) //if exists
+      if (i >= 0 && i < static_cast<int>(keyframes.size()-1))
       {
         dst_accum += transformPcd(keyframes[i].pcd_, keyframes[i].pose_corrected_eig_);
       }
@@ -82,7 +82,7 @@ PcdPair LoopClosure::setSrcAndDstCloud(std::vector<PosePcd> keyframes, const int
       // empirically scan-to-submap matching works better
       for (int i = dst_idx - submap_range; i < dst_idx + submap_range + 1; ++i)
       {
-        if (i >= 0 && i < keyframes.size()-1) //if exists
+        if (i >= 0 && i < static_cast<int>(keyframes.size()-1))
         {
           dst_accum += transformPcd(keyframes[i].pcd_, keyframes[i].pose_corrected_eig_);
         }
