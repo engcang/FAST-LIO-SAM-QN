@@ -97,7 +97,6 @@ class FastLioSamQn
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> sub_pcd_ = nullptr;
     ros::Subscriber sub_save_flag_;
     ///// Loop closure
-    LoopClosureConfig lc_config_;
     std::shared_ptr<LoopClosure> loop_closure_;
   public:
     FastLioSamQn(const ros::NodeHandle& n_private);

@@ -4,21 +4,22 @@ FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : nh_(n_private)
 {
   ////// ROS params
   double loop_update_hz, vis_hz;
-  auto & gc = lc_config_.gicp_config_;
-  auto & qc = lc_config_.quatro_config_;
+  LoopClosureConfig lc_config;
+  auto & gc = lc_config.gicp_config_;
+  auto & qc = lc_config.quatro_config_;
   /* basic */
   nh_.param<std::string>("/basic/map_frame", map_frame_, "map");
   nh_.param<double>("/basic/loop_update_hz", loop_update_hz, 1.0);
   nh_.param<double>("/basic/vis_hz", vis_hz, 0.5);
   nh_.param<double>("/save_voxel_resolution", voxel_res_, 0.3);
-  nh_.param<double>("/quatro_nano_gicp_voxel_resolution", lc_config_.voxel_res_, 0.3);
+  nh_.param<double>("/quatro_nano_gicp_voxel_resolution", lc_config.voxel_res_, 0.3);
   /* keyframe */
   nh_.param<double>("/keyframe/keyframe_threshold", keyframe_thr_, 1.0);
-  nh_.param<int>("/keyframe/nusubmap_keyframes", lc_config_.num_submap_keyframes_, 5);
-  nh_.param<bool>("/keyframe/enable_submap_matching", lc_config_.enable_submap_matching_, false);
+  nh_.param<int>("/keyframe/nusubmap_keyframes", lc_config.num_submap_keyframes_, 5);
+  nh_.param<bool>("/keyframe/enable_submap_matching", lc_config.enable_submap_matching_, false);
   /* loop */
-  nh_.param<double>("/loop/loop_detection_radius", lc_config_.loop_detection_radius_, 15.0);
-  nh_.param<double>("/loop/loop_detection_timediff_threshold", lc_config_.loop_detection_timediff_threshold_, 10.0);
+  nh_.param<double>("/loop/loop_detection_radius", lc_config.loop_detection_radius_, 15.0);
+  nh_.param<double>("/loop/loop_detection_timediff_threshold", lc_config.loop_detection_timediff_threshold_, 10.0);
   /* nano (GICP config) */
   nh_.param<int>("/nano_gicp/thread_number", gc.nano_thread_number_, 0);
   nh_.param<double>("/nano_gicp/icp_score_threshold", gc.icp_score_thr_, 10.0);
@@ -29,7 +30,7 @@ FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : nh_(n_private)
   nh_.param<int>("/nano_gicp/ransac/max_iter", gc.nano_ransac_max_iter_, 5);
   nh_.param<double>("/nano_gicp/ransac/outlier_rejection_threshold", gc.ransac_outlier_rejection_threshold_, 1.0);
   /* quatro (Quatro config) */
-  nh_.param<bool>("/quatro/enable", lc_config_.enable_quatro_, false);
+  nh_.param<bool>("/quatro/enable", lc_config.enable_quatro_, false);
   nh_.param<bool>("/quatro/optimize_matching", qc.use_optimized_matching_, true);
   nh_.param<double>("/quatro/distance_threshold", qc.quatro_distance_threshold_, 30.0);
   nh_.param<int>("/quatro/max_nucorrespondences", qc.quatro_max_num_corres_, 200);
@@ -45,7 +46,7 @@ FastLioSamQn::FastLioSamQn(const ros::NodeHandle& n_private) : nh_(n_private)
   nh_.param<bool>("/result/save_map_pcd", save_map_pcd_, false);
   nh_.param<bool>("/result/save_in_kitti_format", save_in_kitti_format_, false);
   nh_.param<std::string>("/result/seq_name", seq_name_, "");
-  loop_closure_.reset(new LoopClosure(lc_config_));
+  loop_closure_.reset(new LoopClosure(lc_config));
   /* Initialization of GTSAM */
   gtsam::ISAM2Params isam_params_;
   isam_params_.relinearizeThreshold = 0.01;
