@@ -129,9 +129,8 @@ RegistrationOutput LoopClosure::coarseToFineAlignment(const pcl::PointCloud<Poin
   {
     // coarse align with the result of Quatro
     coarse_aligned_ = transformPcd(src, reg_output.pose_between_eig_);
-    const auto &fine_output = icpAlignment(coarse_aligned_, dst);
-
-    const auto quatro_tf_       = reg_output.pose_between_eig_;
+    const auto &fine_output      = icpAlignment(coarse_aligned_, dst);
+    const auto quatro_tf_        = reg_output.pose_between_eig_;
     reg_output = fine_output;
     reg_output.pose_between_eig_ = fine_output.pose_between_eig_ * quatro_tf_; // IMPORTANT: take care of the order
   }
