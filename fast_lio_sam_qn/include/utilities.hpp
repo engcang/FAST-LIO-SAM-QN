@@ -35,18 +35,6 @@
 
 using PointType = pcl::PointXYZI;
 
-// struct PosePcd
-// {
-//   pcl::PointCloud<PointType> pcd_;
-//   Eigen::Matrix4d pose_eig_           = Eigen::Matrix4d::Identity();
-//   Eigen::Matrix4d pose_corrected_eig_ = Eigen::Matrix4d::Identity();
-//   double timestamp_;
-//   int idx_;
-//   bool processed_ = false;
-//   PosePcd(){};
-//   PosePcd(const nav_msgs::Odometry &odom_in, const sensor_msgs::PointCloud2 &pcd_in, const int &idx_in);
-// };
-
 inline pcl::PointCloud<PointType>::Ptr voxelizePcd(const pcl::PointCloud<PointType> &pcd_in, const float voxel_res)
 {
   static pcl::VoxelGrid<PointType> voxelgrid;
