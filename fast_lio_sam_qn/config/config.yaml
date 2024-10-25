@@ -5,8 +5,8 @@ basic:
 
 keyframe:
   keyframe_threshold: 1.5                     # unit [meter] every this distance, generate keyframe
-  subkeyframes_number: 5                      # how many subkeyframes are merged to ICP with current keyframe (closest-this ~ closest+this, if exists)
-  enable_submap_matching: true                # If it is set to be `true`, submap-level (coarse-to-)fine alignment will be performed
+  num_submap_keyframes: 10                     # how many subkeyframes are merged to ICP with current keyframe (closest-this ~ closest+this, if exists)
+  enable_submap_matching: false               # If it is set to be `true`, submap-level (coarse-to-)fine alignment will be performed
                                               # note: without Quatro, anyway scan-to-submap matching is performed, as that shows better performance
 
 loop:
@@ -31,8 +31,8 @@ quatro:                                       # all values are from Quatro offic
   optimize_matching: true                     # whether or not to use Optimized matching
   distance_threshold: 35.0                    # when optimized matching, use only correspondences within this radius, unit [meter]
   max_correspondences: 500                    # max correspondences to use for optimized matching 
-  fpfh_normal_radius: 0.9                     # should satisfy: fpfh_radius >= 1.5 * fpfh_normal_radius
-  fpfh_radius: 1.5                            # should satisfy: fpfh_radius >= 1.5 * fpfh_normal_radius
+  fpfh_normal_radius: 0.9                     # It should be 2.5 - 3.0 * `quatro_nano_gicp_voxel_resolution`
+  fpfh_radius: 1.5                            # It should be 5.0 * `quatro_nano_gicp_voxel_resolution`
   estimating_scale: false 
   noise_bound: 0.3                            # The magnitude of uncertainty of measurements, the best is within v/2 ~ v (v: voxel resol.)
   rotation:

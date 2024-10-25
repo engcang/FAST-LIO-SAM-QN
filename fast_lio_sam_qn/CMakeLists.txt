@@ -3,7 +3,7 @@ project(fast_lio_sam_qn)
 
 ### set compiler
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fexceptions -g -ggdb") #c++17, for parallel programming 
+set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fexceptions -g -ggdb") #c++17, for parallel programming and for Eigen (see https://eigen.tuxfamily.org/dox/group__TopicStructHavingEigenMembers.html)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 include(FindOpenMP) #For Nano-GICP, Quatro #The best way to set proper compiler settings for using OpenMP in all platforms
 if(OPENMP_FOUND) #For Nano-GICP, Quatro #The best way to set proper compiler settings for using OpenMP in all platforms
@@ -63,12 +63,8 @@ include_directories(
 ###########
 ### main
 set(COMMON_LIBS ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${EIGEN3_LIBS} ${OpenMP_LIBS} gtsam)
-add_library(${PROJECT_NAME}_constructor src/constructor.cpp)
-target_link_libraries(${PROJECT_NAME}_constructor ${COMMON_LIBS})
-add_library(${PROJECT_NAME}_methods src/methods.cpp)
-target_link_libraries(${PROJECT_NAME}_methods ${COMMON_LIBS})
-add_library(${PROJECT_NAME}_callbacks src/callbacks.cpp)
-target_link_libraries(${PROJECT_NAME}_callbacks ${COMMON_LIBS})
+add_library(${PROJECT_NAME}_modules src/loop_closure.cpp src/fast_lio_sam_qn.cpp)
+target_link_libraries(${PROJECT_NAME}_modules ${COMMON_LIBS})
 
 add_executable(${PROJECT_NAME}_node src/main.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${COMMON_LIBS} ${PROJECT_NAME}_constructor ${PROJECT_NAME}_callbacks ${PROJECT_NAME}_methods)
+target_link_libraries(${PROJECT_NAME}_node ${COMMON_LIBS} ${PROJECT_NAME}_modules)
