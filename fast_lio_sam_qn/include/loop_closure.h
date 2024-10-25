@@ -9,6 +9,7 @@
 ///// coded headers
 #include "pose_pcd.hpp"
 #include "utilities.hpp"
+using PcdPair = std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>>;
 
 struct NanoGICPConfig 
 {
@@ -57,7 +58,6 @@ struct RegistrationOutput
   Eigen::Matrix4d pose_between_eig_  = Eigen::Matrix4d::Identity();
 };
 
-using PcdPair = std::tuple<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>>;
 class LoopClosure
 {
   private:

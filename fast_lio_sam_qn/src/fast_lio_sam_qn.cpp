@@ -403,7 +403,7 @@ FastLioSamQn::~FastLioSamQn()
       }
     }
     bag.close();
-    cout << "\033[36;1mResult saved in .bag format!!!\033[0m" << endl;
+    ROS_INFO("\033[36;1mResult saved in .bag format!!!\033[0m");
   }
   if (save_map_pcd_)
   {
@@ -419,7 +419,7 @@ FastLioSamQn::~FastLioSamQn()
     }
     const auto &voxelized_map = voxelizePcd(corrected_map, voxel_res_);
     pcl::io::savePCDFileASCII<PointType> (package_path_+"/result.pcd", *voxelized_map);
-    cout << "\033[32;1mResult saved in .pcd format!!!\033[0m" << endl;
+    ROS_INFO("\033[32;1mResult saved in .pcd format!!!\033[0m");
   }
 }
 
