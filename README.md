@@ -37,6 +37,8 @@
   <em>KITTI seq 05 side view - (top): FAST-LIO2 (middle): FAST-LIO-SAM (bottom): FAST-LIO-SAM-QN</em>
 </p>
 
+<br>
+
 ## Dependencies
 + `C++` >= 17, `OpenMP` >= 4.5, `CMake` >= 3.10.0, `Eigen` >= 3.2, `Boost` >= 1.54
 + `ROS`
@@ -77,6 +79,8 @@
     . devel/setup.bash
     ```
 
+<br>
+
 ## How to run
 + Then run (change config files in third_party/`FAST_LIO`)
     ```shell
@@ -94,14 +98,14 @@
 <br>
 
 ## Structure
-+ odom_pcd_cb
++ odomPcdCallback
     + pub realtime pose in corrected frame
     + keyframe detection -> if keyframe, add to pose graph + save to keyframe queue
     + pose graph optimization with iSAM2
-+ loop_timer_func
++ loopTimerFunc
     + process a saved keyframe
         + detect loop -> if loop, add to pose graph
-+ vis_timer_func
++ visTimerFunc
     + visualize all **(Note: global map is only visualized once uncheck/check the mapped_pcd in rviz to save comp.)**
 
 <br>
