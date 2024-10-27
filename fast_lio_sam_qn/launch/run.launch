@@ -2,13 +2,13 @@
 
 	<arg name="rviz" default="true" />
 	<arg name="lidar" default="ouster" /> <!-- ouster, velodyne, livox, kitti, ... -->
-	<arg name="odom_topic" default="/Odometry" /> 
-	<arg name="lidar_topic" default="/cloud_registered" /> 
+	<arg name="odom_topic" default="/Odometry" />
+	<arg name="lidar_topic" default="/cloud_registered" />
 
 	<!-- visualize -->
 	<!-- <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz_lio" args="-d $(find fast_lio_sam_qn)/config/lio_rviz.rviz" launch-prefix="nice"/> -->
 	<node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz_sam" args="-d $(find fast_lio_sam_qn)/config/sam_rviz.rviz" launch-prefix="nice"/>
-	
+
 	<!-- run fast_lio_sam_qn -->
 	<rosparam command="load" file="$(find fast_lio_sam_qn)/config/config.yaml" />
 	<node pkg="fast_lio_sam_qn" type="fast_lio_sam_qn_node" name="fast_lio_sam_qn_node" output="screen">

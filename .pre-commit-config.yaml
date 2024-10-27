@@ -1,0 +1,55 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+      - id: check-xml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      # - id: check-ast #python
+
+# Python
+#  - repo: https://github.com/psf/black
+#    rev: "23.7.0"
+#    hooks:
+#      - id: black
+
+#  - repo: https://github.com/pylint-dev/pylint
+#    rev: "v3.0.0a6"
+#    hooks:
+#      - id: pylint
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: "v19.1.2"
+    hooks:
+      - id: clang-format
+
+  - repo: https://github.com/cpplint/cpplint
+    rev: "2.0.0"
+    hooks:
+      - id: cpplint
+        args:
+          [
+            "--filter=-whitespace/indent,-whitespace/braces,-whitespace/comments,-whitespace/line_length,-whitespace/newline,
+            -build/include_subdir,-build/header_guard,-build/include_order,-build/c++17,-build/namespaces,
+            -readability/braces,-readability/todo,-legal/copyright,-runtime/references",
+          ]
+        files: '\.h$|\.hpp$'
+        exclude: third_party/
+
+  - repo: https://github.com/cpplint/cpplint
+    rev: "2.0.0"
+    hooks:
+      - id: cpplint
+        args:
+          [
+            "--filter=-whitespace/indent,-whitespace/braces,-whitespace/comments,-whitespace/line_length,-whitespace/newline,
+            -build/include_subdir,-build/header_guard,-build/include_order,-build/c++17,-build/namespaces,-build/include_what_you_use,
+            -readability/braces,-readability/todo,-legal/copyright,-runtime/references",
+          ]
+        files: '\.cpp$'
+        exclude: third_party/

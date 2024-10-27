@@ -4,9 +4,9 @@ common:
     time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
     time_offset_lidar_to_imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
                                   # This param will take effect no matter what time_sync_en is. So if the time offset is not known exactly, please set as 0.0
-    
+
 preprocess:
-    lidar_type: 3                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
+    lidar_type: 3                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR,
     scan_line: 64
     scan_rate: 10                # only need to be set for velodyne, unit: Hz,
     timestamp_unit: 3                 # 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
@@ -33,5 +33,5 @@ publish:
 
 pcd_save:
     pcd_save_en: false
-    interval: -1                 # how many LiDAR frames saved in each pcd file; 
+    interval: -1                 # how many LiDAR frames saved in each pcd file;
                                  # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.

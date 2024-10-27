@@ -17,7 +17,7 @@
 ## Computational complexity <br>in KITTI seq. 05 with i9-10900k CPU
 + FAST-LIO-SAM: max 118% CPU usage, 125 times of ICP, 124.9ms consumption on average
 + FAST-LIO-SAM-N (only Nano-GICP): max 164% CPU usage, 130 times of ICP, 61.9ms consumption on average
-+ FAST-LIO-SAM-QN: 
++ FAST-LIO-SAM-QN:
     + Advanced matching - max 325% CPU usage, 85 times of ICP, 140ms consumption on average
     + Optimized matching (with max 200 correspondences downsampling) - max 569% CPU usage, 90 times of ICP, 128.6ms consumption on average
 + Note: `loop_timer_func` runs at fixed `basic/loop_update_hz`. So how many times of ICP occurred can be different depending on the speed of matching methods.
@@ -62,7 +62,7 @@
     sudo apt install libtbb-dev
     ```
 
-## How to build 
+## How to build
 + Get the code and then build the main code.
     ```shell
     cd ~/your_workspace/src
@@ -109,3 +109,10 @@
 ## Memo
 + `Quatro` module fixed for empty matches
 + `Quatro` module is updated with `optimizedMatching` which limits the number of correspondences and increased the speed
+
+<br>
+
+## License
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
+
+This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-nc-sa/4.0/)
