@@ -2,7 +2,7 @@
 #define FAST_LIO_SAM_QN_MAIN_H
 
 ///// common headers
-#include <time.h>
+#include <ctime>
 #include <cmath>
 #include <chrono> //time check
 #include <vector>

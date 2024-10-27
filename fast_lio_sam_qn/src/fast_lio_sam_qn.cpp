@@ -21,6 +21,7 @@ FastLioSamQn::FastLioSamQn(const ros::NodeHandle &n_private):
     /* loop */
     nh_.param<double>("/loop/loop_detection_radius", lc_config.loop_detection_radius_, 15.0);
     nh_.param<double>("/loop/loop_detection_timediff_threshold", lc_config.loop_detection_timediff_threshold_, 10.0);
+    gc.max_corr_dist_ = lc_config.loop_detection_radius_ * 1.5;
     /* nano (GICP config) */
     nh_.param<int>("/nano_gicp/thread_number", gc.nano_thread_number_, 0);
     nh_.param<double>("/nano_gicp/icp_score_threshold", gc.icp_score_thr_, 10.0);
