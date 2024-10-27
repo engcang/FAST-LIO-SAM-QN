@@ -14,6 +14,7 @@ loop:
   loop_detection_timediff_threshold: 30.0     # unit [sec] check if two keyframes are loop if times are farther than this
 
 quatro_nano_gicp_voxel_resolution: 0.3        # voxel resolution to use Quatro and Nano-GICP matching
+save_voxel_resolution: 0.3                    # voxel resolution to save map in .pcd format
 
 nano_gicp:                                    # all values are from Nano-GICP official github (Direct LiDAR Odometry)
   thread_number: 0                            # if 0, max number of core
