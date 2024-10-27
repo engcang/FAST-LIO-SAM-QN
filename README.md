@@ -79,8 +79,6 @@
     . devel/setup.bash
     ```
 
-<br>
-
 ## How to run
 + Then run (change config files in third_party/`FAST_LIO`)
     ```shell
@@ -94,8 +92,6 @@
     roslaunch fast_lio_sam_qn run.launch lidar:=mulran
     roslaunch fast_lio_sam_qn run.launch lidar:=newer-college20
     ```
-
-<br>
 
 ## Structure
 + odomPcdCallback
